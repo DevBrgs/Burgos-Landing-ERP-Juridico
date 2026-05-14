@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 const navLinks = [
   { href: "#inicio", label: "Inicio" },
@@ -21,6 +22,13 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/logo-burgos.png"
+              alt="Burgos & Asociados"
+              width={36}
+              height={36}
+              className="rounded-sm"
+            />
             <span className="text-burgos-gold font-bold text-xl tracking-tight">
               Burgos
             </span>

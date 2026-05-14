@@ -55,3 +55,13 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--burgos-gray-500);
 }
+
+/* Hide scrollbar for carousel */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

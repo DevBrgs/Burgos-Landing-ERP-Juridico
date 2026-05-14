@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Scale, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 
 export function Hero() {
   return (
@@ -24,14 +25,21 @@ export function Hero() {
       <div className="absolute inset-0 bg-gradient-to-b from-burgos-navy via-burgos-navy/95 to-burgos-navy-light" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        {/* Icon */}
+        {/* Logo */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="mb-8"
         >
-          <Scale className="w-16 h-16 text-burgos-gold mx-auto" strokeWidth={1.5} />
+          <Image
+            src="/logo-burgos.png"
+            alt="Burgos & Asociados"
+            width={100}
+            height={100}
+            className="mx-auto rounded-lg shadow-2xl"
+            priority
+          />
         </motion.div>
 
         {/* Title */}
