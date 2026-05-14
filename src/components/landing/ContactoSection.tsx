@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Send, MapPin, Phone, Mail } from "lucide-react";
+import { Send, MapPin, Phone, Mail, Clock } from "lucide-react";
 import { useState } from "react";
 
 export function ContactoSection() {
@@ -16,138 +16,189 @@ export function ContactoSection() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Conectar con API de contacto + derivación automática
     console.log("Formulario enviado:", formData);
     setEnviado(true);
-    setTimeout(() => setEnviado(false), 3000);
+    setTimeout(() => {
+      setEnviado(false);
+      setFormData({ nombre: "", email: "", telefono: "", area: "", mensaje: "" });
+    }, 3000);
   };
 
   return (
-    <section id="contacto" className="py-24 bg-burgos-navy">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          {/* Info */}
+    <section id="contacto" className="py-28 bg-burgos-dark relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-burgos-gold/[0.015] rounded-full blur-[150px]" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="text-center mb-16"
+        >
+          <span className="text-xs uppercase tracking-[0.3em] text-burgos-gold/60 font-medium">
+            Contacto
+          </span>
+          <h2 className="text-3xl sm:text-5xl font-bold text-burgos-white mt-3 mb-4">
+            Consulta Inicial
+          </h2>
+          <p className="text-burgos-gray-400 max-w-lg mx-auto">
+            Contanos tu situación y te derivaremos con el profesional
+            especializado. La primera consulta es sin cargo.
+          </p>
+          <div className="w-12 h-[1px] bg-burgos-gold/40 mx-auto mt-6" />
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Info cards */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
+            className="space-y-4"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              Consulta Inicial
-            </h2>
-            <p className="text-white/60 mb-8 leading-relaxed">
-              Contanos tu situación y te derivaremos con el profesional
-              especializado en tu caso. La primera consulta es sin cargo.
-            </p>
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 text-white/70">
-                <MapPin size={20} className="text-burgos-gold" />
-                <span>Av. Corrientes 1234, Piso 8, CABA</span>
-              </div>
-              <div className="flex items-center gap-3 text-white/70">
-                <Phone size={20} className="text-burgos-gold" />
-                <span>(011) 4567-8900</span>
-              </div>
-              <div className="flex items-center gap-3 text-white/70">
-                <Mail size={20} className="text-burgos-gold" />
-                <span>contacto@burgos.com.ar</span>
-              </div>
-            </div>
+            {[
+              { icon: MapPin, label: "Dirección", value: "Av. Corrientes 1234, Piso 8, CABA" },
+              { icon: Phone, label: "Teléfono", value: "(011) 4567-8900" },
+              { icon: Mail, label: "Email", value: "contacto@burgos.com.ar" },
+              { icon: Clock, label: "Horario", value: "Lun a Vie, 9:00 a 18:00" },
+            ].map((item, i) => (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.1 }}
+                className="bg-burgos-dark-2 rounded-xl border border-burgos-gray-800 p-4 flex items-center gap-4"
+              >
+                <div className="w-10 h-10 bg-burgos-gold/5 border border-burgos-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <item.icon size={18} className="text-burgos-gold" />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium">
+                    {item.label}
+                  </p>
+                  <p className="text-sm text-burgos-white">{item.value}</p>
+                </div>
+              </motion.div>
+            ))}
           </motion.div>
 
           {/* Form */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="lg:col-span-2"
           >
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form
+              onSubmit={handleSubmit}
+              className="bg-burgos-dark-2 rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 space-y-4"
+            >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Nombre completo"
-                  required
-                  value={formData.nombre}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nombre: e.target.value })
-                  }
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-burgos-gold/50 transition-colors"
-                />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  required
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-burgos-gold/50 transition-colors"
-                />
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+                    Nombre completo
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.nombre}
+                    onChange={(e) =>
+                      setFormData({ ...formData, nombre: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm"
+                    placeholder="Juan Pérez"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm"
+                    placeholder="juan@email.com"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <input
-                  type="tel"
-                  placeholder="Teléfono"
-                  value={formData.telefono}
-                  onChange={(e) =>
-                    setFormData({ ...formData, telefono: e.target.value })
-                  }
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-burgos-gold/50 transition-colors"
-                />
-                <select
-                  required
-                  value={formData.area}
-                  onChange={(e) =>
-                    setFormData({ ...formData, area: e.target.value })
-                  }
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-burgos-gold/50 transition-colors appearance-none"
-                >
-                  <option value="" className="bg-burgos-navy">
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+                    Teléfono
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.telefono}
+                    onChange={(e) =>
+                      setFormData({ ...formData, telefono: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm"
+                    placeholder="(011) 1234-5678"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
                     Área de consulta
-                  </option>
-                  <option value="civil" className="bg-burgos-navy">
-                    Derecho Civil
-                  </option>
-                  <option value="comercial" className="bg-burgos-navy">
-                    Derecho Comercial
-                  </option>
-                  <option value="laboral" className="bg-burgos-navy">
-                    Derecho Laboral
-                  </option>
-                  <option value="penal" className="bg-burgos-navy">
-                    Derecho Penal
-                  </option>
-                  <option value="familia" className="bg-burgos-navy">
-                    Derecho de Familia
-                  </option>
-                  <option value="otro" className="bg-burgos-navy">
-                    Otro
-                  </option>
-                </select>
+                  </label>
+                  <select
+                    required
+                    value={formData.area}
+                    onChange={(e) =>
+                      setFormData({ ...formData, area: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm appearance-none"
+                  >
+                    <option value="" className="bg-burgos-dark">
+                      Seleccionar área
+                    </option>
+                    <option value="civil" className="bg-burgos-dark">Derecho Civil</option>
+                    <option value="comercial" className="bg-burgos-dark">Derecho Comercial</option>
+                    <option value="laboral" className="bg-burgos-dark">Derecho Laboral</option>
+                    <option value="penal" className="bg-burgos-dark">Derecho Penal</option>
+                    <option value="familia" className="bg-burgos-dark">Derecho de Familia</option>
+                    <option value="administrativo" className="bg-burgos-dark">Derecho Administrativo</option>
+                    <option value="societario" className="bg-burgos-dark">Derecho Societario</option>
+                    <option value="otro" className="bg-burgos-dark">Otro</option>
+                  </select>
+                </div>
               </div>
 
-              <textarea
-                placeholder="Describí brevemente tu consulta..."
-                required
-                rows={4}
-                value={formData.mensaje}
-                onChange={(e) =>
-                  setFormData({ ...formData, mensaje: e.target.value })
-                }
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-burgos-gold/50 transition-colors resize-none"
-              />
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+                  Describí tu consulta
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={formData.mensaje}
+                  onChange={(e) =>
+                    setFormData({ ...formData, mensaje: e.target.value })
+                  }
+                  className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors resize-none text-sm"
+                  placeholder="Contanos brevemente tu situación..."
+                />
+              </div>
 
               <button
                 type="submit"
                 disabled={enviado}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-burgos-gold hover:bg-burgos-gold-dark disabled:bg-burgos-gold/50 text-burgos-navy px-8 py-3 rounded-lg font-semibold transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black px-8 py-3.5 rounded-xl font-semibold transition-all duration-300 hover:shadow-[0_0_30px_rgba(201,168,76,0.2)]"
               >
                 {enviado ? (
-                  "Enviado ✓"
+                  "Enviado correctamente ✓"
                 ) : (
                   <>
                     Enviar Consulta

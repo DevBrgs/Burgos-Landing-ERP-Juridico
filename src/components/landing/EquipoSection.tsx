@@ -1,10 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useEffect, useRef, useState, useCallback } from "react";
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useCallback } from "react";
+import { Calendar, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
-// Datos placeholder — en producción vendrán de Supabase dinámicamente
+// Datos placeholder — en producción vendrán de Supabase
 const abogados = [
   {
     id: "1",
@@ -12,6 +13,7 @@ const abogados = [
     especialidad: "Derecho Civil y Comercial",
     matricula: "CPACF T° XX F° XXX",
     rol: "Director",
+    bio: "Director del estudio con más de 20 años de experiencia en litigios civiles y comerciales de alta complejidad.",
   },
   {
     id: "2",
@@ -19,6 +21,7 @@ const abogados = [
     especialidad: "Derecho Laboral",
     matricula: "CPACF T° XX F° XXX",
     rol: "Asociada",
+    bio: "Especialista en derecho laboral individual y colectivo. Amplia experiencia en negociaciones sindicales.",
   },
   {
     id: "3",
@@ -26,6 +29,7 @@ const abogados = [
     especialidad: "Derecho Penal",
     matricula: "CPACF T° XX F° XXX",
     rol: "Asociado",
+    bio: "Defensa penal en fuero ordinario y federal. Especializado en delitos económicos y lavado de activos.",
   },
   {
     id: "4",
@@ -33,6 +37,7 @@ const abogados = [
     especialidad: "Derecho de Familia",
     matricula: "CPACF T° XX F° XXX",
     rol: "Asociada",
+    bio: "Mediadora y abogada de familia. Enfoque en resolución pacífica de conflictos familiares.",
   },
   {
     id: "5",
@@ -40,218 +45,203 @@ const abogados = [
     especialidad: "Derecho Administrativo",
     matricula: "CPACF T° XX F° XXX",
     rol: "Asociado",
+    bio: "Asesoramiento a empresas en licitaciones públicas, contratos administrativos y recursos.",
   },
 ];
 
-function AbogadoCard({
-  abogado,
-  isActive,
-}: {
-  abogado: (typeof abogados)[0];
-  isActive: boolean;
-}) {
-  return (
-    <motion.div
-      className="relative flex-shrink-0 w-[300px] sm:w-[340px] h-[440px] rounded-2xl overflow-hidden cursor-pointer group"
-      animate={{ scale: isActive ? 1 : 0.92, opacity: isActive ? 1 : 0.7 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-    >
-      {/* Background */}
-      <div className="absolute inset-0 bg-burgos-navy-light">
-        <div className="absolute inset-0 bg-gradient-to-b from-burgos-navy/30 via-burgos-navy-light/60 to-burgos-navy/95" />
-      </div>
-
-      {/* Foto del abogado (placeholder con iniciales) */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl mt-[-40px] group-hover:border-burgos-gold/50 transition-colors duration-300">
-          <div className="absolute inset-0 bg-burgos-navy flex items-center justify-center">
-            <span className="text-4xl font-bold text-burgos-gold/60">
-              {abogado.nombre
-                .split(" ")
-                .filter(
-                  (_, i, arr) => i === 0 || i === arr.length - 1
-                )
-                .map((n) => n[0])
-                .join("")}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Info del abogado */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
-        {abogado.rol === "Director" && (
-          <span className="inline-block text-xs bg-burgos-gold/20 text-burgos-gold-light px-3 py-1 rounded-full mb-2 font-medium backdrop-blur-sm">
-            Director del Estudio
-          </span>
-        )}
-        <h3 className="text-white font-bold text-lg mb-1">{abogado.nombre}</h3>
-        <p className="text-white/60 text-sm mb-1">{abogado.especialidad}</p>
-        <p className="text-white/40 text-xs mb-4">{abogado.matricula}</p>
-        <a
-          href="#contacto"
-          className="inline-flex items-center gap-1.5 text-sm text-burgos-gold hover:text-burgos-gold-light font-medium transition-colors"
-        >
-          <Calendar size={14} />
-          Reservar turno
-        </a>
-      </div>
-    </motion.div>
-  );
-}
+const slideVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? 300 : -300,
+    opacity: 0,
+    scale: 0.9,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+    scale: 1,
+  },
+  exit: (direction: number) => ({
+    x: direction < 0 ? 300 : -300,
+    opacity: 0,
+    scale: 0.9,
+  }),
+};
 
 export function EquipoSection() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [[activeIndex, direction], setActiveIndex] = useState([0, 0]);
   const [isPaused, setIsPaused] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const cardWidth = 356;
-
-  const scrollTo = useCallback(
-    (index: number) => {
-      if (!containerRef.current) return;
-      const newIndex =
-        ((index % abogados.length) + abogados.length) % abogados.length;
-      setActiveIndex(newIndex);
-      containerRef.current.scrollTo({
-        left:
-          newIndex * cardWidth -
-          (containerRef.current.offsetWidth / 2 - cardWidth / 2),
-        behavior: "smooth",
+  const paginate = useCallback(
+    (newDirection: number) => {
+      setActiveIndex(([prev]) => {
+        const next =
+          ((prev + newDirection) % abogados.length + abogados.length) %
+          abogados.length;
+        return [next, newDirection];
       });
     },
     []
   );
 
-  // Auto-slide cada 4 segundos
-  useEffect(() => {
-    if (isPaused) return;
-
-    intervalRef.current = setInterval(() => {
-      setActiveIndex((prev) => {
-        const next = (prev + 1) % abogados.length;
-        scrollTo(next);
-        return next;
-      });
-    }, 4000);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isPaused, scrollTo]);
-
-  const handleScroll = () => {
-    if (!containerRef.current) return;
-    const { scrollLeft, clientWidth } = containerRef.current;
-    const newIndex = Math.round(
-      (scrollLeft + clientWidth / 2 - cardWidth / 2) / cardWidth
-    );
-    setActiveIndex(
-      Math.max(0, Math.min(newIndex, abogados.length - 1))
-    );
+  const goTo = (index: number) => {
+    setActiveIndex(([prev]) => [index, index > prev ? 1 : -1]);
   };
 
+  // Auto-slide cada 5 segundos
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => paginate(1), 5000);
+    return () => clearInterval(interval);
+  }, [isPaused, paginate]);
+
+  const abogado = abogados[activeIndex];
+
   return (
-    <section id="equipo" className="py-24 bg-burgos-navy relative overflow-hidden">
-      {/* Background subtle */}
-      <div className="absolute inset-0 opacity-5">
+    <section
+      id="equipo"
+      className="py-28 bg-burgos-black relative overflow-hidden"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* Background */}
+      <div className="absolute inset-0">
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 opacity-[0.02]"
           style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(201,168,76,0.4) 1px, transparent 0)`,
-            backgroundSize: "60px 60px",
+            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(201,168,76,1) 1px, transparent 0)`,
+            backgroundSize: "50px 50px",
           }}
         />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-burgos-gold/[0.02] rounded-full blur-[100px]" />
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12 px-4"
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="text-center mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+          <span className="text-xs uppercase tracking-[0.3em] text-burgos-gold/60 font-medium">
+            Profesionales
+          </span>
+          <h2 className="text-3xl sm:text-5xl font-bold text-burgos-white mt-3 mb-4">
             Nuestro Equipo
           </h2>
-          <p className="text-white/50 max-w-2xl mx-auto">
-            Profesionales comprometidos con la excelencia. Deslizá para conocer
-            a nuestro equipo.
-          </p>
+          <div className="w-12 h-[1px] bg-burgos-gold/40 mx-auto" />
         </motion.div>
 
-        {/* Carousel */}
-        <div
-          className="relative"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-          onTouchStart={() => setIsPaused(true)}
-          onTouchEnd={() => setIsPaused(false)}
-        >
+        {/* Card carousel — una a la vez */}
+        <div className="relative max-w-lg mx-auto">
           {/* Navigation arrows */}
           <button
-            onClick={() => scrollTo(activeIndex - 1)}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/10 hover:bg-burgos-gold/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:text-burgos-gold transition-colors"
+            onClick={() => paginate(-1)}
+            className="absolute -left-4 sm:-left-16 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-burgos-dark-2 hover:bg-burgos-dark-3 border border-burgos-gray-800 hover:border-burgos-gold/30 rounded-full flex items-center justify-center text-burgos-gray-400 hover:text-burgos-gold transition-all duration-300"
             aria-label="Anterior"
           >
             <ChevronLeft size={20} />
           </button>
           <button
-            onClick={() => scrollTo(activeIndex + 1)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/10 hover:bg-burgos-gold/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:text-burgos-gold transition-colors"
+            onClick={() => paginate(1)}
+            className="absolute -right-4 sm:-right-16 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-burgos-dark-2 hover:bg-burgos-dark-3 border border-burgos-gray-800 hover:border-burgos-gold/30 rounded-full flex items-center justify-center text-burgos-gray-400 hover:text-burgos-gold transition-all duration-300"
             aria-label="Siguiente"
           >
             <ChevronRight size={20} />
           </button>
 
-          {/* Cards container */}
-          <div
-            ref={containerRef}
-            onScroll={handleScroll}
-            className="flex gap-4 overflow-x-auto scrollbar-hide px-[calc(50vw-170px)] sm:px-[calc(50vw-180px)] py-4 snap-x snap-mandatory"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {abogados.map((abogado, index) => (
-              <div
-                key={abogado.id}
-                className="snap-center"
-                onClick={() => {
-                  setIsPaused(true);
-                  scrollTo(index);
-                  setTimeout(() => setIsPaused(false), 6000);
-                }}
+          {/* Card */}
+          <div className="relative h-[480px] sm:h-[500px] overflow-hidden">
+            <AnimatePresence initial={false} custom={direction} mode="wait">
+              <motion.div
+                key={activeIndex}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute inset-0"
               >
-                <AbogadoCard
-                  abogado={abogado}
-                  isActive={index === activeIndex}
-                />
-              </div>
-            ))}
+                <div className="h-full bg-burgos-dark rounded-3xl border border-burgos-gray-800 hover:border-burgos-gold/20 overflow-hidden transition-colors duration-500 gold-glow">
+                  {/* Top gradient area (donde iría la foto de fondo) */}
+                  <div className="relative h-48 bg-gradient-to-b from-burgos-dark-3 to-burgos-dark flex items-center justify-center">
+                    {/* Foto placeholder */}
+                    <div className="w-28 h-28 rounded-full bg-burgos-dark-2 border-2 border-burgos-gold/20 flex items-center justify-center">
+                      <span className="text-3xl font-bold text-burgos-gold/50">
+                        {abogado.nombre
+                          .split(" ")
+                          .filter((_, i, arr) => i === 0 || i === arr.length - 1)
+                          .map((n) => n[0])
+                          .join("")}
+                      </span>
+                    </div>
+                    {/* Role badge */}
+                    {abogado.rol === "Director" && (
+                      <div className="absolute top-4 right-4 bg-burgos-gold/10 border border-burgos-gold/30 text-burgos-gold text-[10px] uppercase tracking-wider font-semibold px-3 py-1 rounded-full">
+                        Director
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-8 text-center">
+                    <h3 className="text-xl font-bold text-burgos-white mb-1">
+                      {abogado.nombre}
+                    </h3>
+                    <p className="text-burgos-gold text-sm font-medium mb-1">
+                      {abogado.especialidad}
+                    </p>
+                    <p className="text-burgos-gray-600 text-xs mb-4">
+                      {abogado.matricula}
+                    </p>
+                    <p className="text-burgos-gray-400 text-sm leading-relaxed mb-6">
+                      {abogado.bio}
+                    </p>
+
+                    <div className="flex gap-3 justify-center">
+                      <a
+                        href="#contacto"
+                        className="inline-flex items-center gap-2 bg-burgos-gold/10 hover:bg-burgos-gold/20 text-burgos-gold border border-burgos-gold/30 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300"
+                      >
+                        <Calendar size={14} />
+                        Reservar turno
+                      </a>
+                      <Link
+                        href={`/equipo/${abogado.id}`}
+                        className="inline-flex items-center gap-1 text-burgos-gray-400 hover:text-burgos-gold text-sm font-medium transition-colors px-4 py-2.5"
+                      >
+                        Ver perfil
+                        <ArrowRight size={14} />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* Dots indicator */}
-        <div className="flex justify-center gap-2 mt-6">
+        {/* Dots */}
+        <div className="flex justify-center gap-2 mt-8">
           {abogados.map((_, index) => (
             <button
               key={index}
-              onClick={() => scrollTo(index)}
-              className={`h-2 rounded-full transition-all duration-300 ${
+              onClick={() => goTo(index)}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
                 index === activeIndex
-                  ? "bg-burgos-gold w-6"
-                  : "bg-white/20 hover:bg-white/40 w-2"
+                  ? "bg-burgos-gold w-8"
+                  : "bg-burgos-gray-800 hover:bg-burgos-gray-600 w-1.5"
               }`}
               aria-label={`Ir al abogado ${index + 1}`}
             />
           ))}
         </div>
 
-        {/* Hint text */}
-        <p className="text-center text-white/30 text-xs mt-4 tracking-widest uppercase">
-          Deslizá para conocer más
+        {/* Counter */}
+        <p className="text-center text-burgos-gray-600 text-xs mt-4 font-mono">
+          {String(activeIndex + 1).padStart(2, "0")} / {String(abogados.length).padStart(2, "0")}
         </p>
       </div>
     </section>

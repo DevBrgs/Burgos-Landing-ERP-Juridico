@@ -1,66 +1,76 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Newspaper, ArrowRight, Clock, User, Tag } from "lucide-react";
+import { Newspaper, ArrowRight, Clock, User, Tag, ArrowUpRight } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 
-// Datos placeholder — en producción vendrán de Supabase (últimas 3 publicaciones)
+// Datos placeholder — en producción vendrán de Supabase (dinámico, priorizando lo más reciente)
 const publicaciones = [
   {
     id: "1",
     titulo: "Nuevas modificaciones al Código Procesal Civil y Comercial",
     resumen:
-      "Análisis de las recientes reformas que impactan en los plazos procesales y la tramitación de causas civiles.",
+      "Análisis de las recientes reformas que impactan en los plazos procesales y la tramitación de causas civiles en el ámbito nacional.",
     categoria: "Novedades Normativas",
     autor: "Dr. Martín Burgos",
     fecha: "10 May 2025",
-    imagen: null,
+    destacado: true,
   },
   {
     id: "2",
-    titulo: "Caso de éxito: Indemnización laboral por despido discriminatorio",
+    titulo: "Caso de éxito: Indemnización por despido discriminatorio",
     resumen:
-      "Logramos una sentencia favorable que reconoce el despido discriminatorio y establece una indemnización agravada.",
+      "Sentencia favorable que reconoce el despido discriminatorio con indemnización agravada para nuestro cliente.",
     categoria: "Casos de Éxito",
     autor: "Dra. Laura Méndez",
     fecha: "5 May 2025",
-    imagen: null,
+    destacado: false,
   },
   {
     id: "3",
     titulo: "Charla abierta: Derechos del consumidor en la era digital",
     resumen:
-      "El próximo jueves realizaremos una charla gratuita sobre los derechos del consumidor en compras online.",
+      "El próximo jueves realizaremos una charla gratuita sobre los derechos del consumidor en compras online y plataformas digitales.",
     categoria: "Eventos",
     autor: "Dra. Carolina Vega",
     fecha: "1 May 2025",
-    imagen: null,
+    destacado: false,
+  },
+  {
+    id: "4",
+    titulo: "Actualización: Nuevos montos de UMA para regulación de honorarios",
+    resumen:
+      "Se actualizaron los valores de la Unidad de Medida Arancelaria. Impacto directo en las regulaciones de honorarios profesionales.",
+    categoria: "Novedades Normativas",
+    autor: "Dr. Alejandro Torres",
+    fecha: "28 Abr 2025",
+    destacado: false,
+  },
+  {
+    id: "5",
+    titulo: "Jurisprudencia: CSJN sobre prescripción en acciones laborales",
+    resumen:
+      "Análisis del reciente fallo de la Corte Suprema que modifica el criterio de prescripción en reclamos por accidentes laborales.",
+    categoria: "Jurisprudencia",
+    autor: "Dra. Laura Méndez",
+    fecha: "22 Abr 2025",
+    destacado: false,
   },
 ];
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.15 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-};
-
-function categoriaColor(cat: string) {
+function categoriaStyle(cat: string) {
   switch (cat) {
     case "Novedades Normativas":
-      return "bg-blue-500/10 text-blue-400";
+      return "bg-blue-500/10 text-blue-400 border-blue-500/20";
     case "Casos de Éxito":
-      return "bg-green-500/10 text-green-400";
+      return "bg-green-500/10 text-green-400 border-green-500/20";
     case "Eventos":
-      return "bg-purple-500/10 text-purple-400";
+      return "bg-purple-500/10 text-purple-400 border-purple-500/20";
+    case "Jurisprudencia":
+      return "bg-amber-500/10 text-amber-400 border-amber-500/20";
     default:
-      return "bg-burgos-gold/10 text-burgos-gold";
+      return "bg-burgos-gold/10 text-burgos-gold border-burgos-gold/20";
   }
 }
 
@@ -70,113 +80,160 @@ export function NewsletterSection() {
 
   const handleSuscripcion = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Conectar con API de suscripción (Resend)
     console.log("Suscripción:", email);
     setSuscrito(true);
     setEmail("");
     setTimeout(() => setSuscrito(false), 4000);
   };
 
+  const destacado = publicaciones.find((p) => p.destacado);
+  const resto = publicaciones.filter((p) => !p.destacado);
+
   return (
-    <section id="newsletter" className="py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="newsletter" className="py-28 bg-burgos-dark relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-burgos-gold/[0.02] rounded-full blur-[120px]" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-12"
         >
-          <div className="inline-flex items-center gap-2 bg-burgos-gold/10 text-burgos-gold-dark px-4 py-1.5 rounded-full text-sm font-medium mb-4">
-            <Newspaper size={16} />
-            Newsletter Jurídico
+          <div>
+            <span className="text-xs uppercase tracking-[0.3em] text-burgos-gold/60 font-medium">
+              Newsletter Jurídico
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-bold text-burgos-white mt-3 mb-2">
+              Novedades
+            </h2>
+            <p className="text-burgos-gray-400 max-w-md">
+              Publicado por nuestros profesionales. Noticias, jurisprudencia,
+              eventos y casos de éxito.
+            </p>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-burgos-navy mb-4">
-            Últimas Publicaciones
-          </h2>
-          <p className="text-burgos-gray-500 max-w-2xl mx-auto">
-            Noticias legales, casos de éxito y eventos del estudio. Publicado
-            por nuestros profesionales.
-          </p>
+          <Link
+            href="/newsletter"
+            className="mt-4 sm:mt-0 inline-flex items-center gap-2 text-burgos-gold hover:text-burgos-gold-light text-sm font-medium transition-colors group"
+          >
+            Ver todas las publicaciones
+            <ArrowRight
+              size={16}
+              className="group-hover:translate-x-1 transition-transform"
+            />
+          </Link>
         </motion.div>
 
-        {/* Posts grid */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
-        >
-          {publicaciones.map((post) => (
+        {/* Layout: Destacado + Lista */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Post destacado */}
+          {destacado && (
             <motion.article
-              key={post.id}
-              variants={itemVariants}
-              className="bg-burgos-cream rounded-xl overflow-hidden border border-burgos-gray-200 hover:shadow-lg transition-shadow group cursor-pointer"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="lg:col-span-3 group"
             >
-              {/* Imagen placeholder */}
-              <div className="h-40 bg-burgos-navy/5 flex items-center justify-center">
-                <Newspaper className="w-10 h-10 text-burgos-navy/20" />
-              </div>
-
-              <div className="p-5">
-                {/* Categoría */}
-                <span
-                  className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full mb-3 ${categoriaColor(post.categoria)}`}
-                >
-                  <Tag size={10} />
-                  {post.categoria}
-                </span>
-
-                {/* Título */}
-                <h3 className="font-semibold text-burgos-navy mb-2 group-hover:text-burgos-gold-dark transition-colors line-clamp-2">
-                  {post.titulo}
-                </h3>
-
-                {/* Resumen */}
-                <p className="text-sm text-burgos-gray-500 mb-4 line-clamp-2">
-                  {post.resumen}
-                </p>
-
-                {/* Meta */}
-                <div className="flex items-center justify-between text-xs text-burgos-gray-500">
-                  <span className="flex items-center gap-1">
-                    <User size={12} />
-                    {post.autor}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock size={12} />
-                    {post.fecha}
-                  </span>
+              <Link href={`/newsletter/${destacado.id}`} className="block">
+                <div className="h-full bg-burgos-dark-2 rounded-2xl border border-burgos-gray-800 hover:border-burgos-gold/20 overflow-hidden transition-all duration-500 p-8 flex flex-col justify-between min-h-[320px]">
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <span
+                        className={`text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full border ${categoriaStyle(destacado.categoria)}`}
+                      >
+                        {destacado.categoria}
+                      </span>
+                      <span className="text-burgos-gray-600 text-xs flex items-center gap-1">
+                        <Clock size={10} />
+                        {destacado.fecha}
+                      </span>
+                    </div>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-burgos-white group-hover:text-burgos-gold transition-colors duration-300 mb-4">
+                      {destacado.titulo}
+                    </h3>
+                    <p className="text-burgos-gray-400 leading-relaxed">
+                      {destacado.resumen}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-burgos-gray-800">
+                    <span className="text-sm text-burgos-gray-400 flex items-center gap-1.5">
+                      <User size={12} />
+                      {destacado.autor}
+                    </span>
+                    <span className="text-burgos-gold text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+                      Leer más
+                      <ArrowUpRight size={14} />
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </Link>
             </motion.article>
-          ))}
-        </motion.div>
+          )}
 
-        {/* Ver más + Suscripción */}
+          {/* Lista de posts */}
+          <div className="lg:col-span-2 space-y-4">
+            {resto.map((post, index) => (
+              <motion.article
+                key={post.id}
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <Link href={`/newsletter/${post.id}`} className="block group">
+                  <div className="bg-burgos-dark-2 rounded-xl border border-burgos-gray-800 hover:border-burgos-gold/20 p-5 transition-all duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full border ${categoriaStyle(post.categoria)}`}
+                      >
+                        {post.categoria}
+                      </span>
+                      <span className="text-burgos-gray-600 text-[10px]">
+                        {post.fecha}
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-semibold text-burgos-white group-hover:text-burgos-gold transition-colors line-clamp-2 mb-1.5">
+                      {post.titulo}
+                    </h4>
+                    <p className="text-xs text-burgos-gray-400 flex items-center gap-1">
+                      <User size={10} />
+                      {post.autor}
+                    </p>
+                  </div>
+                </Link>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+
+        {/* Suscripción */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="bg-burgos-navy rounded-2xl p-8 sm:p-10"
+          className="mt-12 bg-burgos-dark-2 rounded-2xl border border-burgos-gray-800 p-8 sm:p-10"
         >
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
             <div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                Suscribite al newsletter
+              <h3 className="text-lg font-bold text-burgos-white mb-1">
+                Suscribite al resumen semanal
               </h3>
-              <p className="text-white/50 text-sm">
-                Recibí un resumen semanal con las novedades legales más
-                relevantes.
+              <p className="text-burgos-gray-400 text-sm">
+                Recibí las novedades legales más relevantes cada semana en tu
+                casilla.
               </p>
             </div>
 
             <form
               onSubmit={handleSuscripcion}
-              className="flex w-full lg:w-auto gap-3"
+              className="flex w-full lg:w-auto gap-2"
             >
               <input
                 type="email"
@@ -184,21 +241,14 @@ export function NewsletterSection() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 lg:w-64 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-burgos-gold/50 transition-colors"
+                className="flex-1 lg:w-56 px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm"
               />
               <button
                 type="submit"
                 disabled={suscrito}
-                className="inline-flex items-center gap-2 bg-burgos-gold hover:bg-burgos-gold-dark disabled:bg-burgos-gold/50 text-burgos-navy px-6 py-3 rounded-lg font-semibold transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black px-6 py-3 rounded-xl font-semibold transition-all duration-300 text-sm whitespace-nowrap"
               >
-                {suscrito ? (
-                  "Suscrito ✓"
-                ) : (
-                  <>
-                    Suscribirme
-                    <ArrowRight size={16} />
-                  </>
-                )}
+                {suscrito ? "Suscrito ✓" : "Suscribirme"}
               </button>
             </form>
           </div>
