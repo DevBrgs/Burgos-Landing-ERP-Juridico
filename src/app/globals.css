@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+:root {
+  /* Paleta Burgos & Asociados */
+  --burgos-navy: #1a2332;
+  --burgos-navy-light: #2a3a4f;
+  --burgos-gold: #c9a84c;
+  --burgos-gold-light: #e0c76e;
+  --burgos-gold-dark: #a88a3a;
+  --burgos-cream: #f8f6f0;
+  --burgos-white: #ffffff;
+  --burgos-gray-100: #f3f4f6;
+  --burgos-gray-200: #e5e7eb;
+  --burgos-gray-300: #d1d5db;
+  --burgos-gray-500: #6b7280;
+  --burgos-gray-700: #374151;
+  --burgos-gray-900: #111827;
+
+  --background: var(--burgos-white);
+  --foreground: var(--burgos-gray-900);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-burgos-navy: var(--burgos-navy);
+  --color-burgos-navy-light: var(--burgos-navy-light);
+  --color-burgos-gold: var(--burgos-gold);
+  --color-burgos-gold-light: var(--burgos-gold-light);
+  --color-burgos-gold-dark: var(--burgos-gold-dark);
+  --color-burgos-cream: var(--burgos-cream);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--burgos-gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--burgos-gray-300);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--burgos-gray-500);
+}
