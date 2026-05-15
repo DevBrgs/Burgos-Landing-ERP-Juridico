@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
 async function buscarSAIJ(query: string) {
   try {
-    const searchUrl = `http://www.saij.gob.ar/busqueda?o=0&p=25&f=Total&t=jurisprudencia&q=${encodeURIComponent(query)}`;
+    const searchUrl = `https://www.saij.gob.ar/busqueda#/jurisprudencia?q=${encodeURIComponent(query)}`;
 
     // Usar Groq para generar un resumen orientativo sobre la búsqueda jurídica
     let resumen = "";
@@ -72,7 +72,7 @@ Usá terminología jurídica argentina. Sé conciso y útil.`,
     return NextResponse.json({
       fuente: "SAIJ",
       query,
-      url: `http://www.saij.gob.ar/busqueda?o=0&p=25&f=Total&t=jurisprudencia&q=${encodeURIComponent(query)}`,
+      url: `https://www.saij.gob.ar/busqueda#/jurisprudencia?q=${encodeURIComponent(query)}`,
       resumen: `Buscá jurisprudencia sobre "${query}" directamente en SAIJ.`,
       instrucciones: "Hacé clic en el enlace para ver los resultados en el buscador de SAIJ.",
     });

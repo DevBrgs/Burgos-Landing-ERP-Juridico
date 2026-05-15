@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { CheckSquare, Plus, X, AlertTriangle, Clock, MessageSquare, Paperclip, Users, Tag, Send } from "lucide-react";
+import { CheckSquare, Plus, X, AlertTriangle, Clock, MessageSquare, Paperclip, Users, Tag, Send, Link2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { FileUpload } from "@/components/ui/FileUpload";
 
@@ -176,6 +176,12 @@ function KanbanColumn({ title, count, color, tareas, onUpdate, onSelect, onToggl
                       <Paperclip size={10} />
                     </a>
                   )}
+                  {/* Expediente link indicator */}
+                  {tarea.expediente_id && (
+                    <span className="text-[10px] flex items-center gap-0.5 text-blue-400" title="Vinculada a expediente">
+                      <Link2 size={10} />
+                    </span>
+                  )}
                   {/* Comments toggle */}
                   <button onClick={(e) => { e.stopPropagation(); setExpandedComments(showComments ? null : tarea.id); }} className="text-[10px] flex items-center gap-0.5 text-burgos-gray-600 hover:text-burgos-gold transition-colors">
                     <MessageSquare size={10} />
@@ -308,19 +314,23 @@ function ComentariosTarea({ tareaId }: { tareaId: string }) {
 }
 
 function NuevaTareaModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ titulo: "", descripcion: "", prioridad: "normal", vence_en: "", asignado_a: "", etiquetas: "", subtareas: "" });
+  const [form, setForm] = useState({ titulo: "", descripcion: "", prioridad: "normal", vence_en: "", asignado_a: "", expediente_id: "", etiquetas: "", subtareas: "" });
   const [adjuntoUrl, setAdjuntoUrl] = useState("");
   const [adjuntoNombre, setAdjuntoNombre] = useState("");
   const [loading, setLoading] = useState(false);
   const [abogados, setAbogados] = useState<{ id: string; nombre: string }[]>([]);
+  const [expedientes, setExpedientes] = useState<{ id: string; caratula: string; numero: string }[]>([]);
   const supabase = createClient();
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase.from("abogados").select("id, nombre").eq("activo", true);
-      if (data) setAbogados(data);
+    const fetchData = async () => {
+      const { data: abogadosData } = await supabase.from("abogados").select("id, nombre").eq("activo", true);
+      if (abogadosData) setAbogados(abogadosData);
+
+      const { data: expedientesData } = await supabase.from("expedientes").select("id, caratula, numero").order("creado_en", { ascending: false });
+      if (expedientesData) setExpedientes(expedientesData);
     };
-    fetch();
+    fetchData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -342,6 +352,7 @@ function NuevaTareaModal({ onClose, onSuccess }: { onClose: () => void; onSucces
       descripcion: form.descripcion || null,
       prioridad: form.prioridad,
       vence_en: form.vence_en || null,
+      expediente_id: form.expediente_id || null,
       etiquetas: etiquetasArr,
       subtareas: subtareasArr,
       adjunto_url: adjuntoUrl || null,
@@ -374,6 +385,13 @@ function NuevaTareaModal({ onClose, onSuccess }: { onClose: () => void; onSucces
             <select value={form.asignado_a} onChange={(e) => setForm({ ...form, asignado_a: e.target.value })} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm appearance-none">
               <option value="" className="bg-burgos-dark">Yo mismo</option>
               {abogados.map((a) => <option key={a.id} value={a.id} className="bg-burgos-dark">{a.nombre}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Vincular a expediente (opcional)</label>
+            <select value={form.expediente_id} onChange={(e) => setForm({ ...form, expediente_id: e.target.value })} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm appearance-none">
+              <option value="" className="bg-burgos-dark">Sin expediente</option>
+              {expedientes.map((exp) => <option key={exp.id} value={exp.id} className="bg-burgos-dark">{exp.numero} — {exp.caratula}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
