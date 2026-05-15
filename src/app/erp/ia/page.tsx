@@ -28,7 +28,15 @@ export default function IAPage() {
         .select("id, nombre, especialidad")
         .eq("user_id", user.id)
         .single();
-      if (data) setAbogadoId(data.id);
+      if (data) {
+        setAbogadoId(data.id);
+        // Saludo inicial personalizado
+        setMessages([{
+          id: "welcome",
+          role: "assistant",
+          content: `Hola ${data.nombre.split(" ")[0]}. Soy tu asistente jurídico especializado en ${data.especialidad}. ¿Qué necesitás?`,
+        }]);
+      }
     };
     getAbogado();
   }, []);

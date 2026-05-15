@@ -12,6 +12,7 @@ import {
   Gavel,
   Users,
   UserPlus,
+  UserCog,
   Newspaper,
   Settings,
   LogOut,
@@ -31,6 +32,7 @@ const navItems = [
   { href: "/erp/newsletter", label: "Newsletter", icon: Newspaper },
   { href: "/erp/clientes", label: "Clientes", icon: Users },
   { href: "/erp/abogados", label: "Equipo", icon: UserPlus },
+  { href: "/erp/perfil", label: "Mi Perfil", icon: UserCog },
   { href: "/erp/configuracion", label: "Configuración", icon: Settings },
 ];
 

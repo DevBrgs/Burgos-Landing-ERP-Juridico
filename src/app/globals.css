@@ -131,3 +131,18 @@ html {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Light mode for ERP */
+.light-mode .bg-burgos-black { background-color: #f8f9fa; }
+.light-mode .bg-burgos-dark { background-color: #ffffff; }
+.light-mode .bg-burgos-dark-2 { background-color: #f3f4f6; }
+.light-mode .bg-burgos-dark-3 { background-color: #e5e7eb; }
+.light-mode .text-burgos-white { color: #111827; }
+.light-mode .text-burgos-gray-400 { color: #6b7280; }
+.light-mode .text-burgos-gray-600 { color: #9ca3af; }
+.light-mode .border-burgos-gray-800 { border-color: #e5e7eb; }
+.light-mode .bg-burgos-black\/50 { background-color: rgba(249, 250, 251, 0.5); }
+.light-mode input, .light-mode textarea, .light-mode select {
+  color: #111827;
+}
+.light-mode .placeholder\:text-burgos-gray-600::placeholder { color: #9ca3af; }

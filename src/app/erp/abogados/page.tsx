@@ -373,10 +373,11 @@ function AltaAbogadoModal({
               <option value="asociado" className="bg-burgos-dark">
                 Asociado
               </option>
-              <option value="director" className="bg-burgos-dark">
-                Director
+              <option value="administrativo" className="bg-burgos-dark">
+                Administrativo
               </option>
             </select>
+            <p className="text-[10px] text-burgos-gray-600 mt-1">Solo el director puede crear otros directores.</p>
           </div>
 
           <button
