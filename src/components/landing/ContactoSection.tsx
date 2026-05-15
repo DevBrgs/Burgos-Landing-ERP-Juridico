@@ -101,6 +101,26 @@ export function ContactoSection() {
                 </div>
               </motion.div>
             ))}
+
+            {/* Mapa */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+              className="bg-burgos-dark-2 rounded-xl border border-burgos-gray-800 overflow-hidden h-40"
+            >
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3284.0168878895463!2d-58.38375!3d-34.604!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzTCsDM2JzE0LjQiUyA1OMKwMjMnMDEuNSJX!5e0!3m2!1ses!2sar!4v1"
+                width="100%"
+                height="100%"
+                style={{ border: 0, filter: "invert(90%) hue-rotate(180deg) brightness(0.8) contrast(1.2)" }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Ubicación Burgos & Asociados"
+              />
+            </motion.div>
           </motion.div>
 
           {/* Form */}
