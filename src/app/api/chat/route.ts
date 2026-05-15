@@ -15,16 +15,14 @@ function getSupabase() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, abogadoId, tipo } = await request.json();
+    const { message, abogadoId, tipo, historial } = await request.json();
 
     if (!message) {
       return NextResponse.json({ error: "Mensaje requerido" }, { status: 400 });
     }
 
-    // Tipo "publica" = IA del landing (sin contexto de abogado)
-    // Tipo "privada" = IA del ERP (con contexto del abogado)
     if (tipo === "publica") {
-      return handleChatPublico(message);
+      return handleChatPublico(message, historial || []);
     }
 
     return handleChatPrivado(message, abogadoId);
@@ -37,7 +35,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleChatPublico(message: string) {
+async function handleChatPublico(message: string, historial: { role: string; content: string }[]) {
   const supabase = getSupabase();
 
   // Obtener abogados activos para contexto
@@ -48,11 +46,11 @@ async function handleChatPublico(message: string) {
 
   const equipoInfo = abogados?.map(a => `- ${a.nombre}: ${a.especialidad} (${a.areas?.join(", ") || ""})`).join("\n") || "No hay abogados registrados";
 
-  const completion = await groq.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content: `Sos el asistente virtual de Burgos & Asociados, un estudio jurídico ubicado en Av. Corrientes 1234, Piso 8, CABA, Buenos Aires, Argentina.
+  // Construir mensajes con historial
+  const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
+    {
+      role: "system",
+      content: `Sos el asistente virtual de Burgos & Asociados, un estudio jurídico ubicado en Av. Corrientes 1234, Piso 8, CABA, Buenos Aires, Argentina.
 Horario: Lunes a Viernes de 9:00 a 18:00.
 Teléfono: (011) 4567-8900.
 Email: contacto@burgos.com.ar
@@ -60,21 +58,41 @@ Email: contacto@burgos.com.ar
 EQUIPO DEL ESTUDIO:
 ${equipoInfo}
 
-REGLAS ABSOLUTAS — NO NEGOCIABLES:
-1. SOLO respondés sobre el estudio jurídico Burgos & Asociados: ubicación, horarios, equipo, áreas de práctica, y gestión de turnos.
-2. NO das asesoría legal, NO opinás sobre casos, NO sugerís estrategias legales, NO analizás situaciones jurídicas.
-3. NO ayudás con NADA que no sea del estudio: no programás, no das recetas, no ayudás con tareas, no charlás.
-4. Si te piden algo fuera del estudio, respondé EXACTAMENTE: "Solo puedo ayudarte con información sobre Burgos & Asociados y la gestión de turnos. ¿Necesitás agendar una consulta?"
-5. Para turnos: preguntá nombre, DNI, motivo de consulta, y fecha/hora preferida. Sugerí el abogado más adecuado según el área de consulta.
-6. Si alguien consulta por un tema legal, orientá sobre QUÉ ÁREA corresponde y sugerí agendar turno con el abogado especialista. NO des la respuesta legal.
-7. Respuestas CORTAS: máximo 3 líneas. Sin listas largas, sin explicaciones extensas.
-8. Tono: profesional, cordial, argentino (vos/tuteo). Sin emojis.`,
-      },
-      { role: "user", content: message },
-    ],
+TU FUNCIÓN PRINCIPAL: Gestionar turnos y dar información del estudio.
+
+FLUJO DE TURNOS:
+1. Preguntá nombre, DNI y motivo de consulta
+2. Según el motivo, sugerí el abogado más adecuado
+3. Ofrecé horarios disponibles (Lun-Vie 9-18, cada 30 min)
+4. Confirmá el turno con fecha, hora y abogado
+
+REGLAS:
+- Si el usuario dice "si", "sí", "dale", "ok", "bueno" → es una CONFIRMACIÓN de lo que propusiste antes. Seguí con el flujo.
+- NO rechaces confirmaciones. Si propusiste algo y el usuario acepta, avanzá.
+- Podés hablar sobre: ubicación, horarios, equipo, áreas, y gestionar turnos.
+- NO des asesoría legal. Si preguntan algo legal, decí qué área corresponde y ofrecé turno.
+- Si piden algo totalmente fuera del estudio (programar, cocinar, etc.), respondé: "Solo puedo ayudarte con información sobre Burgos & Asociados y la gestión de turnos."
+- Respuestas CORTAS: 2-3 líneas máximo.
+- Tono: profesional, cordial, argentino.`,
+    },
+  ];
+
+  // Agregar historial de conversación
+  for (const msg of historial) {
+    messages.push({
+      role: msg.role === "assistant" ? "assistant" : "user",
+      content: msg.content,
+    });
+  }
+
+  // Agregar mensaje actual
+  messages.push({ role: "user", content: message });
+
+  const completion = await groq.chat.completions.create({
+    messages,
     model: "llama-3.1-8b-instant",
-    temperature: 0.2,
-    max_tokens: 200,
+    temperature: 0.3,
+    max_tokens: 250,
   });
 
   const reply = completion.choices[0]?.message?.content || "Solo puedo ayudarte con información sobre Burgos & Asociados y la gestión de turnos.";
