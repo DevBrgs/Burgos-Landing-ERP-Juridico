@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { createClient } from "@supabase/supabase-js";
+import { rateLimit } from "@/lib/rate-limit";
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || "",
@@ -15,6 +16,13 @@ function getSupabase() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 20 requests per minute per IP
+    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const { success } = rateLimit(ip, 20);
+    if (!success) {
+      return NextResponse.json({ error: "Demasiadas solicitudes. Esperá un momento." }, { status: 429 });
+    }
+
     const { message, abogadoId, tipo, historial } = await request.json();
 
     if (!message) {
