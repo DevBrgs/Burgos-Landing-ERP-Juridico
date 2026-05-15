@@ -8,6 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://erplandingburgos.vercel.app"),
   title: "Burgos & Asociados | Estudio Jurídico en Buenos Aires",
   description:
     "Estudio jurídico integral en CABA con más de 20 años de experiencia. Derecho civil, comercial, laboral, penal y familia. Consulta inicial sin cargo.",
@@ -26,15 +27,17 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Burgos & Asociados | Estudio Jurídico",
     description:
-      "Estudio jurídico integral en Buenos Aires. Más de 20 años de experiencia. Consulta inicial sin cargo.",
+      "Estudio jurídico integral en Buenos Aires. Más de 20 años de experiencia.",
     type: "website",
     locale: "es_AR",
     siteName: "Burgos & Asociados",
+    images: [{ url: "/logo-burgos.png", width: 512, height: 512, alt: "Burgos & Asociados" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Burgos & Asociados | Estudio Jurídico",
     description: "Soluciones legales integrales en Buenos Aires.",
+    images: ["/logo-burgos.png"],
   },
   alternates: {
     canonical: "https://erplandingburgos.vercel.app",
