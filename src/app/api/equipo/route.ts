@@ -17,7 +17,7 @@ export async function GET() {
       .from("abogados")
       .select("id, nombre, especialidad, matricula, foto_url, fondo_url, bio, areas, experiencia, rol, whatsapp")
       .eq("activo", true)
-      .order("rol", { ascending: true })
+      .not("rol", "in", "(director,administrativo)")
       .order("creado_en", { ascending: true });
 
     if (error) {

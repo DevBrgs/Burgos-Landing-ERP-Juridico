@@ -20,6 +20,7 @@ export default function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showMasivoModal, setShowMasivoModal] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const supabase = createClient();
 
@@ -59,13 +60,22 @@ export default function ClientesPage() {
             {clientes.length} clientes registrados
           </p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300"
-        >
-          <Plus size={16} />
-          Nuevo Cliente
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowMasivoModal(true)}
+            className="inline-flex items-center gap-2 bg-burgos-dark border border-burgos-gray-800 hover:border-burgos-gold/30 text-burgos-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300"
+          >
+            <Key size={16} />
+            Claves masivas
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300"
+          >
+            <Plus size={16} />
+            Nuevo Cliente
+          </button>
+        </div>
       </motion.div>
 
       {/* Search */}
@@ -124,6 +134,10 @@ export default function ClientesPage() {
 
       {showModal && (
         <NuevoClienteModal onClose={() => setShowModal(false)} onSuccess={() => { setShowModal(false); fetchClientes(); }} />
+      )}
+
+      {showMasivoModal && (
+        <ClavesMasivasModal onClose={() => setShowMasivoModal(false)} onSuccess={() => { setShowMasivoModal(false); fetchClientes(); }} />
       )}
     </div>
   );
@@ -245,6 +259,150 @@ function NuevoClienteModal({ onClose, onSuccess }: { onClose: () => void; onSucc
             {loading ? "Creando..." : "Crear Cliente"}
           </button>
         </form>
+      </motion.div>
+    </div>
+  );
+}
+
+function ClavesMasivasModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [dnis, setDnis] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [resultados, setResultados] = useState<{ dni: string; clave: string; error?: string }[]>([]);
+  const [copied, setCopied] = useState(false);
+  const supabase = createClient();
+
+  const generarClave = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    let result = "";
+    for (let i = 0; i < 8; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+    return result;
+  };
+
+  const handleGenerar = async () => {
+    const listaDnis = dnis
+      .split("\n")
+      .map((d) => d.trim())
+      .filter((d) => d.length > 0);
+
+    if (listaDnis.length === 0) return;
+    setLoading(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: abogado } = await supabase.from("abogados").select("id").eq("user_id", user.id).single();
+    if (!abogado) return;
+
+    const results: { dni: string; clave: string; error?: string }[] = [];
+
+    for (const dni of listaDnis) {
+      const clave = generarClave();
+      const { error } = await supabase.from("clientes").insert({
+        nombre: `Cliente ${dni}`,
+        dni,
+        clave_hash: clave,
+        abogado_id: abogado.id,
+      });
+
+      if (error) {
+        results.push({ dni, clave: "", error: error.message.includes("duplicate") ? "DNI duplicado" : error.message });
+      } else {
+        results.push({ dni, clave });
+      }
+    }
+
+    setResultados(results);
+    setLoading(false);
+  };
+
+  const copiarResultados = () => {
+    const text = resultados
+      .filter((r) => !r.error)
+      .map((r) => `DNI: ${r.dni} | Clave: ${r.clave}`)
+      .join("\n");
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-burgos-white flex items-center gap-2">
+            <Key size={18} className="text-burgos-gold" />
+            Generación Masiva de Claves
+          </h2>
+          <button onClick={onClose} className="text-burgos-gray-600 hover:text-burgos-white">
+            <X size={20} />
+          </button>
+        </div>
+
+        {resultados.length === 0 ? (
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+                DNIs (uno por línea)
+              </label>
+              <textarea
+                value={dnis}
+                onChange={(e) => setDnis(e.target.value)}
+                rows={8}
+                placeholder={"12345678\n23456789\n34567890"}
+                className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm font-mono resize-none"
+              />
+              <p className="text-[10px] text-burgos-gray-600 mt-1">
+                Se creará un cliente por cada DNI con una clave aleatoria generada.
+              </p>
+            </div>
+
+            <button
+              onClick={handleGenerar}
+              disabled={loading || !dnis.trim()}
+              className="w-full bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black py-3 rounded-xl font-semibold transition-all duration-300"
+            >
+              {loading ? "Generando..." : "Generar Claves"}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-burgos-black/50 border border-burgos-gray-800 rounded-xl p-4 max-h-60 overflow-y-auto">
+              {resultados.map((r, i) => (
+                <div
+                  key={i}
+                  className={`flex justify-between items-center py-2 ${i > 0 ? "border-t border-burgos-gray-800/50" : ""}`}
+                >
+                  <span className="text-sm font-mono text-burgos-gray-400">{r.dni}</span>
+                  {r.error ? (
+                    <span className="text-xs text-red-400">{r.error}</span>
+                  ) : (
+                    <span className="text-sm font-mono text-burgos-gold">{r.clave}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={copiarResultados}
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-burgos-dark-2 border border-burgos-gray-800 hover:border-burgos-gold/30 text-burgos-white py-3 rounded-xl font-medium text-sm transition-all"
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? "Copiado" : "Copiar resultados"}
+              </button>
+              <button
+                onClick={() => { onSuccess(); }}
+                className="flex-1 bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black py-3 rounded-xl font-semibold text-sm transition-all"
+              >
+                Listo
+              </button>
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );

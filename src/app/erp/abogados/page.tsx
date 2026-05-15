@@ -6,14 +6,11 @@ import {
   UserPlus,
   Users,
   Search,
-  MoreVertical,
   Shield,
-  Mail,
   Eye,
   EyeOff,
   X,
   Check,
-  Trash2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -33,6 +30,8 @@ export default function AbogadosPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [busqueda, setBusqueda] = useState("");
+  const [currentRol, setCurrentRol] = useState<string>("asociado");
+  const [showReasignar, setShowReasignar] = useState<Abogado | null>(null);
 
   const supabase = createClient();
 
@@ -46,12 +45,37 @@ export default function AbogadosPage() {
     setLoading(false);
   };
 
+  const fetchCurrentRol = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("abogados")
+      .select("rol")
+      .eq("user_id", user.id)
+      .single();
+    if (data) setCurrentRol(data.rol);
+  };
+
   useEffect(() => {
     fetchAbogados();
+    fetchCurrentRol();
   }, []);
 
-  const toggleActivo = async (id: string, activo: boolean) => {
-    await supabase.from("abogados").update({ activo: !activo }).eq("id", id);
+  const handleDesactivar = async (abogado: Abogado) => {
+    if (abogado.activo) {
+      // Check if they have active expedientes
+      const { data: expedientes } = await supabase
+        .from("expedientes")
+        .select("id")
+        .eq("abogado_id", abogado.id)
+        .eq("estado", "activo");
+
+      if (expedientes && expedientes.length > 0) {
+        setShowReasignar(abogado);
+        return;
+      }
+    }
+    await supabase.from("abogados").update({ activo: !abogado.activo }).eq("id", abogado.id);
     fetchAbogados();
   };
 
@@ -61,6 +85,12 @@ export default function AbogadosPage() {
       a.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
       a.email.toLowerCase().includes(busqueda.toLowerCase())
   );
+
+  // Fix 3: Hide director from non-directors
+  const visibleAbogados = filtered.filter((a) => {
+    if (currentRol !== "director" && a.rol === "director") return false;
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -85,7 +115,7 @@ export default function AbogadosPage() {
           className="inline-flex items-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300"
         >
           <UserPlus size={16} />
-          Nuevo Abogado
+          Nuevo Miembro
         </button>
       </motion.div>
 
@@ -121,12 +151,12 @@ export default function AbogadosPage() {
           <div className="col-span-full text-center py-12">
             <div className="w-8 h-8 border-2 border-burgos-gold/30 border-t-burgos-gold rounded-full animate-spin mx-auto" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : visibleAbogados.length === 0 ? (
           <div className="col-span-full text-center py-12">
             <p className="text-burgos-gray-600">No se encontraron abogados.</p>
           </div>
         ) : (
-          filtered.map((abogado) => (
+          visibleAbogados.map((abogado) => (
             <div
               key={abogado.id}
               className={`bg-burgos-dark rounded-2xl border p-5 transition-all duration-300 ${
@@ -177,16 +207,19 @@ export default function AbogadosPage() {
               )}
 
               <div className="flex gap-2">
-                <button
-                  onClick={() => toggleActivo(abogado.id, abogado.activo)}
-                  className={`flex-1 text-xs py-2 rounded-lg font-medium transition-all border ${
-                    abogado.activo
-                      ? "bg-red-500/5 border-red-500/20 text-red-400 hover:bg-red-500/10"
-                      : "bg-green-500/5 border-green-500/20 text-green-400 hover:bg-green-500/10"
-                  }`}
-                >
-                  {abogado.activo ? "Desactivar" : "Reactivar"}
-                </button>
+                {/* Fix 3: Hide desactivar for director if current user is not director */}
+                {!(currentRol !== "director" && abogado.rol === "director") && (
+                  <button
+                    onClick={() => handleDesactivar(abogado)}
+                    className={`flex-1 text-xs py-2 rounded-lg font-medium transition-all border ${
+                      abogado.activo
+                        ? "bg-red-500/5 border-red-500/20 text-red-400 hover:bg-red-500/10"
+                        : "bg-green-500/5 border-green-500/20 text-green-400 hover:bg-green-500/10"
+                    }`}
+                  >
+                    {abogado.activo ? "Desactivar" : "Reactivar"}
+                  </button>
+                )}
               </div>
             </div>
           ))
@@ -199,6 +232,19 @@ export default function AbogadosPage() {
           onClose={() => setShowModal(false)}
           onSuccess={() => {
             setShowModal(false);
+            fetchAbogados();
+          }}
+        />
+      )}
+
+      {/* Modal de reasignación */}
+      {showReasignar && (
+        <ReasignarModal
+          abogado={showReasignar}
+          abogados={abogados.filter((a) => a.activo && a.id !== showReasignar.id && a.rol !== "administrativo")}
+          onClose={() => setShowReasignar(null)}
+          onSuccess={() => {
+            setShowReasignar(null);
             fetchAbogados();
           }}
         />
@@ -232,7 +278,6 @@ function AltaAbogadoModal({
     setLoading(true);
 
     try {
-      // Llamar a la API para crear el usuario y el abogado
       const res = await fetch("/api/abogados", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -242,7 +287,7 @@ function AltaAbogadoModal({
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Error al crear el abogado");
+        setError(data.error || "Error al crear el miembro");
       } else {
         onSuccess();
       }
@@ -263,7 +308,7 @@ function AltaAbogadoModal({
       >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold text-burgos-white">
-            Nuevo Abogado
+            Nuevo Miembro
           </h2>
           <button
             onClick={onClose}
@@ -334,35 +379,6 @@ function AltaAbogadoModal({
 
           <div>
             <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
-              Especialidad
-            </label>
-            <input
-              type="text"
-              required
-              value={form.especialidad}
-              onChange={(e) =>
-                setForm({ ...form, especialidad: e.target.value })
-              }
-              className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm"
-              placeholder="Derecho Civil y Comercial"
-            />
-          </div>
-
-          <div>
-            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
-              Matrícula CPACF
-            </label>
-            <input
-              type="text"
-              value={form.matricula}
-              onChange={(e) => setForm({ ...form, matricula: e.target.value })}
-              className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm"
-              placeholder="T° XX F° XXX"
-            />
-          </div>
-
-          <div>
-            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
               Rol
             </label>
             <select
@@ -377,7 +393,39 @@ function AltaAbogadoModal({
                 Administrativo
               </option>
             </select>
-            <p className="text-[10px] text-burgos-gray-600 mt-1">Solo el director puede crear otros directores.</p>
+            <p className="text-[10px] text-burgos-gray-600 mt-1">
+              Los administrativos no requieren especialidad ni matrícula.
+            </p>
+          </div>
+
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+              Especialidad
+            </label>
+            <input
+              type="text"
+              required={form.rol !== "administrativo"}
+              value={form.especialidad}
+              onChange={(e) =>
+                setForm({ ...form, especialidad: e.target.value })
+              }
+              className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm"
+              placeholder={form.rol === "administrativo" ? "Opcional" : "Derecho Civil y Comercial"}
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+              Matrícula CPACF
+            </label>
+            <input
+              type="text"
+              required={form.rol !== "administrativo"}
+              value={form.matricula}
+              onChange={(e) => setForm({ ...form, matricula: e.target.value })}
+              className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm"
+              placeholder={form.rol === "administrativo" ? "Opcional" : "T° XX F° XXX"}
+            />
           </div>
 
           <button
@@ -390,11 +438,128 @@ function AltaAbogadoModal({
             ) : (
               <>
                 <Check size={18} />
-                Crear Abogado
+                Crear Miembro
               </>
             )}
           </button>
         </form>
+      </motion.div>
+    </div>
+  );
+}
+
+function ReasignarModal({
+  abogado,
+  abogados,
+  onClose,
+  onSuccess,
+}: {
+  abogado: Abogado;
+  abogados: Abogado[];
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [destino, setDestino] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [expedientesCount, setExpedientesCount] = useState(0);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from("expedientes")
+        .select("id", { count: "exact", head: true })
+        .eq("abogado_id", abogado.id)
+        .eq("estado", "activo");
+      setExpedientesCount(count || 0);
+    };
+    fetchCount();
+  }, [abogado.id]);
+
+  const handleReasignar = async () => {
+    if (!destino) return;
+    setLoading(true);
+
+    // Reasignar expedientes activos
+    await supabase
+      .from("expedientes")
+      .update({ abogado_id: destino })
+      .eq("abogado_id", abogado.id)
+      .eq("estado", "activo");
+
+    // Desactivar al abogado
+    await supabase
+      .from("abogados")
+      .update({ activo: false })
+      .eq("id", abogado.id);
+
+    setLoading(false);
+    onSuccess();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 w-full max-w-md"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-burgos-white">
+            Reasignar Expedientes
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-burgos-gray-600 hover:text-burgos-white transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-sm px-4 py-3 rounded-xl mb-4">
+          <strong>{abogado.nombre}</strong> tiene{" "}
+          <strong>{expedientesCount}</strong> expediente(s) activo(s). Debés
+          reasignarlos antes de desactivarlo.
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+              Reasignar a
+            </label>
+            <select
+              value={destino}
+              onChange={(e) => setDestino(e.target.value)}
+              className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm appearance-none"
+            >
+              <option value="" className="bg-burgos-dark">
+                Seleccionar abogado...
+              </option>
+              {abogados.map((a) => (
+                <option key={a.id} value={a.id} className="bg-burgos-dark">
+                  {a.nombre} ({a.especialidad || a.rol})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 text-sm py-3 rounded-xl font-medium border border-burgos-gray-800 text-burgos-gray-400 hover:text-burgos-white hover:border-burgos-gray-600 transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleReasignar}
+              disabled={!destino || loading}
+              className="flex-1 text-sm py-3 rounded-xl font-semibold bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black transition-all"
+            >
+              {loading ? "Reasignando..." : "Reasignar y Desactivar"}
+            </button>
+          </div>
+        </div>
       </motion.div>
     </div>
   );

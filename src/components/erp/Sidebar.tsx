@@ -26,6 +26,7 @@ import {
   Building2,
   BookOpen,
   HelpCircle,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +47,7 @@ const navItems = [
   { href: "/erp/abogados", label: "Equipo", icon: UserPlus },
   { href: "/erp/perfil", label: "Mi Perfil", icon: UserCog },
   { href: "/erp/estudios", label: "Estudios", icon: Building2 },
+  { href: "/erp/actividad", label: "Actividad", icon: Activity },
   { href: "/erp/configuracion", label: "Configuración", icon: Settings },
   { href: "/erp/manual", label: "Manual", icon: HelpCircle },
 ];
@@ -67,6 +69,7 @@ const navItemDescriptions: Record<string, string> = {
   "/erp/abogados": "Gestión del equipo",
   "/erp/perfil": "Tu información y foto",
   "/erp/estudios": "Gestión multi-estudio",
+  "/erp/actividad": "Log de actividad del sistema",
   "/erp/configuracion": "Ajustes del sistema",
   "/erp/manual": "Guía de uso del ERP",
 };
@@ -91,6 +94,7 @@ export function Sidebar() {
   // Filtrar items según rol
   const visibleItems = navItems.filter((item) => {
     if (item.href === "/erp/estudios") return rol === "director";
+    if (item.href === "/erp/actividad") return rol === "director";
     if (rol === "administrativo") {
       const adminAllowed = ["/erp", "/erp/turnos", "/erp/clientes", "/erp/honorarios", "/erp/mensajes", "/erp/perfil", "/erp/configuracion"];
       return adminAllowed.includes(item.href);
