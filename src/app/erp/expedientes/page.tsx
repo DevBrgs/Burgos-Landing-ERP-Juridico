@@ -2,13 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import {
-  FolderOpen,
-  Plus,
-  Search,
-  Eye,
-  X,
-} from "lucide-react";
+import { FolderOpen, Plus, Search, Eye, X, Users, Globe, User } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
@@ -19,10 +13,9 @@ interface Expediente {
   fuero: string | null;
   juzgado: string | null;
   estado: string;
-  notas_internas: string | null;
+  es_general: boolean;
   creado_en: string;
   abogado_id: string;
-  cliente_id: string | null;
 }
 
 const estadoStyles: Record<string, string> = {
@@ -31,129 +24,89 @@ const estadoStyles: Record<string, string> = {
   cerrado: "bg-burgos-gray-600/10 text-burgos-gray-400 border-burgos-gray-600/20",
   archivado: "bg-blue-500/10 text-blue-400 border-blue-500/20",
 };
-
-const estadoLabels: Record<string, string> = {
-  activo: "Activo",
-  en_espera: "En espera",
-  cerrado: "Cerrado",
-  archivado: "Archivado",
-};
+const estadoLabels: Record<string, string> = { activo: "Activo", en_espera: "En espera", cerrado: "Cerrado", archivado: "Archivado" };
 
 export default function ExpedientesPage() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [busqueda, setBusqueda] = useState("");
+  const [tab, setTab] = useState<"mis" | "generales">("mis");
   const [showModal, setShowModal] = useState(false);
+  const [abogadoId, setAbogadoId] = useState<string | null>(null);
   const supabase = createClient();
 
   const fetchExpedientes = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: abogado } = await supabase.from("abogados").select("id, rol").eq("user_id", user.id).single();
-    if (!abogado) return;
+    if (!user) { setLoading(false); return; }
+    const { data: abogado } = await supabase.from("abogados").select("id").eq("user_id", user.id).single();
+    if (abogado) setAbogadoId(abogado.id);
 
-    let query = supabase.from("expedientes").select("*").order("creado_en", { ascending: false });
-    if (abogado.rol !== "director") {
-      // Ver propios + donde es colaborador
-      query = query.or(`abogado_id.eq.${abogado.id}`);
-    }
-
-    const { data } = await query;
+    const { data } = await supabase.from("expedientes").select("*").order("creado_en", { ascending: false });
     if (data) setExpedientes(data);
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchExpedientes();
-  }, []);
+  useEffect(() => { fetchExpedientes(); }, []);
 
-  const filtered = expedientes.filter((exp) => {
+  const misExp = expedientes.filter(e => !e.es_general && e.abogado_id === abogadoId);
+  const generales = expedientes.filter(e => e.es_general);
+  const currentList = tab === "mis" ? misExp : generales;
+
+  const filtered = currentList.filter((exp) => {
     const matchEstado = filtroEstado === "todos" || exp.estado === filtroEstado;
-    const matchBusqueda =
-      busqueda === "" ||
-      exp.caratula.toLowerCase().includes(busqueda.toLowerCase()) ||
-      (exp.numero && exp.numero.includes(busqueda));
+    const matchBusqueda = busqueda === "" || exp.caratula.toLowerCase().includes(busqueda.toLowerCase()) || (exp.numero && exp.numero.includes(busqueda));
     return matchEstado && matchBusqueda;
   });
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-burgos-white flex items-center gap-2">
             <FolderOpen size={24} className="text-burgos-gold" />
             Expedientes
           </h1>
-          <p className="text-burgos-gray-400 text-sm mt-1">
-            {expedientes.length} expedientes en total
-          </p>
+          <p className="text-burgos-gray-400 text-sm mt-1">{expedientes.length} en total · {misExp.length} personales · {generales.length} generales</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300"
-        >
-          <Plus size={16} />
-          Nuevo Expediente
+        <button onClick={() => setShowModal(true)} className="inline-flex items-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black px-5 py-2.5 rounded-xl font-semibold text-sm transition-all">
+          <Plus size={16} /> Nuevo Expediente
         </button>
       </motion.div>
 
+      {/* Tabs */}
+      <div className="flex gap-2">
+        <button onClick={() => setTab("mis")} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all border ${tab === "mis" ? "bg-burgos-gold/10 text-burgos-gold border-burgos-gold/30" : "text-burgos-gray-400 border-burgos-gray-800 hover:border-burgos-gray-600"}`}>
+          <User size={14} /> Mis Expedientes ({misExp.length})
+        </button>
+        <button onClick={() => setTab("generales")} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all border ${tab === "generales" ? "bg-burgos-gold/10 text-burgos-gold border-burgos-gold/30" : "text-burgos-gray-400 border-burgos-gray-800 hover:border-burgos-gray-600"}`}>
+          <Globe size={14} /> Generales ({generales.length})
+        </button>
+      </div>
+
       {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="flex flex-col sm:flex-row gap-3"
-      >
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-burgos-gray-600" />
-          <input
-            type="text"
-            placeholder="Buscar por carátula o número..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-burgos-dark border border-burgos-gray-800 rounded-xl text-sm text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/30 transition-colors"
-          />
+          <input type="text" placeholder="Buscar por carátula o número..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className="w-full pl-9 pr-4 py-2.5 bg-burgos-dark border border-burgos-gray-800 rounded-xl text-sm text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/30" />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {["todos", "activo", "en_espera", "cerrado", "archivado"].map((estado) => (
-            <button
-              key={estado}
-              onClick={() => setFiltroEstado(estado)}
-              className={`px-4 py-2 rounded-xl text-xs font-medium transition-all border ${
-                filtroEstado === estado
-                  ? "bg-burgos-gold/10 text-burgos-gold border-burgos-gold/30"
-                  : "bg-burgos-dark text-burgos-gray-400 border-burgos-gray-800 hover:border-burgos-gray-600"
-              }`}
-            >
+          {["todos", "activo", "en_espera", "cerrado"].map((estado) => (
+            <button key={estado} onClick={() => setFiltroEstado(estado)} className={`px-3 py-2 rounded-xl text-xs font-medium transition-all border ${filtroEstado === estado ? "bg-burgos-gold/10 text-burgos-gold border-burgos-gold/30" : "bg-burgos-dark text-burgos-gray-400 border-burgos-gray-800"}`}>
               {estado === "todos" ? "Todos" : estadoLabels[estado]}
             </button>
           ))}
         </div>
-      </motion.div>
+      </div>
 
       {/* Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 overflow-hidden"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 overflow-hidden">
         {loading ? (
-          <div className="text-center py-12">
-            <div className="w-8 h-8 border-2 border-burgos-gold/30 border-t-burgos-gold rounded-full animate-spin mx-auto" />
-          </div>
+          <div className="text-center py-12"><div className="w-8 h-8 border-2 border-burgos-gold/30 border-t-burgos-gold rounded-full animate-spin mx-auto" /></div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">
             <FolderOpen size={40} className="text-burgos-gray-800 mx-auto mb-3" />
-            <p className="text-burgos-gray-600 text-sm">
-              {expedientes.length === 0 ? "No hay expedientes. Creá el primero." : "No se encontraron resultados."}
-            </p>
+            <p className="text-burgos-gray-600 text-sm">{tab === "mis" ? "No tenés expedientes personales." : "No hay expedientes generales."}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -161,10 +114,9 @@ export default function ExpedientesPage() {
               <thead>
                 <tr className="border-b border-burgos-gray-800">
                   <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium">Carátula</th>
-                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium hidden md:table-cell">N° Expediente</th>
+                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium hidden md:table-cell">N°</th>
                   <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium hidden lg:table-cell">Fuero</th>
                   <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium">Estado</th>
-                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium hidden sm:table-cell">Fecha</th>
                   <th className="px-5 py-3"></th>
                 </tr>
               </thead>
@@ -172,28 +124,19 @@ export default function ExpedientesPage() {
                 {filtered.map((exp) => (
                   <tr key={exp.id} className="border-b border-burgos-gray-800/50 hover:bg-burgos-dark-2 transition-colors">
                     <td className="px-5 py-4">
-                      <p className="text-sm text-burgos-white font-medium line-clamp-2">{exp.caratula}</p>
-                      {exp.juzgado && <p className="text-[10px] text-burgos-gray-600 mt-0.5">{exp.juzgado}</p>}
+                      <div className="flex items-center gap-2">
+                        {exp.es_general && <Globe size={12} className="text-blue-400" />}
+                        <div>
+                          <p className="text-sm text-burgos-white font-medium line-clamp-2">{exp.caratula}</p>
+                          {exp.juzgado && <p className="text-[10px] text-burgos-gray-600 mt-0.5">{exp.juzgado}</p>}
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-5 py-4 hidden md:table-cell">
-                      <span className="text-sm text-burgos-gray-400 font-mono">{exp.numero || "—"}</span>
-                    </td>
-                    <td className="px-5 py-4 hidden lg:table-cell">
-                      <span className="text-sm text-burgos-gray-400">{exp.fuero || "—"}</span>
-                    </td>
+                    <td className="px-5 py-4 hidden md:table-cell"><span className="text-sm text-burgos-gray-400 font-mono">{exp.numero || "—"}</span></td>
+                    <td className="px-5 py-4 hidden lg:table-cell"><span className="text-sm text-burgos-gray-400">{exp.fuero || "—"}</span></td>
+                    <td className="px-5 py-4"><span className={`text-[9px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full border ${estadoStyles[exp.estado]}`}>{estadoLabels[exp.estado]}</span></td>
                     <td className="px-5 py-4">
-                      <span className={`text-[9px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full border ${estadoStyles[exp.estado]}`}>
-                        {estadoLabels[exp.estado]}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 hidden sm:table-cell">
-                      <span className="text-xs text-burgos-gray-600">{new Date(exp.creado_en).toLocaleDateString()}</span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <Link
-                        href={`/erp/expedientes/${exp.id}`}
-                        className="w-8 h-8 bg-burgos-dark-2 border border-burgos-gray-800 hover:border-burgos-gold/30 rounded-lg flex items-center justify-center text-burgos-gray-400 hover:text-burgos-gold transition-all"
-                      >
+                      <Link href={`/erp/expedientes/${exp.id}`} className="w-8 h-8 bg-burgos-dark-2 border border-burgos-gray-800 hover:border-burgos-gold/30 rounded-lg flex items-center justify-center text-burgos-gray-400 hover:text-burgos-gold transition-all">
                         <Eye size={14} />
                       </Link>
                     </td>
@@ -205,36 +148,22 @@ export default function ExpedientesPage() {
         )}
       </motion.div>
 
-      {showModal && (
-        <NuevoExpedienteModal onClose={() => setShowModal(false)} onSuccess={() => { setShowModal(false); fetchExpedientes(); }} />
-      )}
+      {showModal && <NuevoExpedienteModal abogadoId={abogadoId} onClose={() => setShowModal(false)} onSuccess={() => { setShowModal(false); fetchExpedientes(); }} />}
     </div>
   );
 }
 
-function NuevoExpedienteModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({
-    caratula: "",
-    numero: "",
-    fuero: "",
-    juzgado: "",
-    estado: "activo",
-    notas_internas: "",
-  });
+function NuevoExpedienteModal({ abogadoId, onClose, onSuccess }: { abogadoId: string | null; onClose: () => void; onSuccess: () => void }) {
+  const [form, setForm] = useState({ caratula: "", numero: "", fuero: "", juzgado: "", estado: "activo", notas_internas: "", es_general: false });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!abogadoId) { setError("No autenticado"); return; }
     setError("");
     setLoading(true);
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setError("No autenticado"); setLoading(false); return; }
-
-    const { data: abogado } = await supabase.from("abogados").select("id").eq("user_id", user.id).single();
-    if (!abogado) { setError("Perfil no encontrado"); setLoading(false); return; }
 
     const { error: insertError } = await supabase.from("expedientes").insert({
       caratula: form.caratula,
@@ -243,15 +172,11 @@ function NuevoExpedienteModal({ onClose, onSuccess }: { onClose: () => void; onS
       juzgado: form.juzgado || null,
       estado: form.estado,
       notas_internas: form.notas_internas || null,
-      abogado_id: abogado.id,
+      abogado_id: abogadoId,
+      es_general: form.es_general,
     });
 
-    if (insertError) {
-      setError(insertError.message);
-      setLoading(false);
-      return;
-    }
-
+    if (insertError) { setError(insertError.message); setLoading(false); return; }
     setLoading(false);
     onSuccess();
   };
@@ -264,9 +189,7 @@ function NuevoExpedienteModal({ onClose, onSuccess }: { onClose: () => void; onS
           <h2 className="text-lg font-bold text-burgos-white">Nuevo Expediente</h2>
           <button onClick={onClose} className="text-burgos-gray-600 hover:text-burgos-white"><X size={20} /></button>
         </div>
-
         {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-xl mb-4">{error}</div>}
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Carátula *</label>
@@ -296,19 +219,18 @@ function NuevoExpedienteModal({ onClose, onSuccess }: { onClose: () => void; onS
             <input type="text" value={form.juzgado} onChange={(e) => setForm({ ...form, juzgado: e.target.value })} placeholder="Juzgado Civil N° 45" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Estado</label>
-            <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm appearance-none">
-              <option value="activo" className="bg-burgos-dark">Activo</option>
-              <option value="en_espera" className="bg-burgos-dark">En espera</option>
-              <option value="cerrado" className="bg-burgos-dark">Cerrado</option>
-              <option value="archivado" className="bg-burgos-dark">Archivado</option>
-            </select>
-          </div>
-          <div>
             <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Notas internas</label>
-            <textarea value={form.notas_internas} onChange={(e) => setForm({ ...form, notas_internas: e.target.value })} rows={3} placeholder="Notas privadas sobre el caso..." className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm resize-none" />
+            <textarea value={form.notas_internas} onChange={(e) => setForm({ ...form, notas_internas: e.target.value })} rows={2} placeholder="Notas privadas..." className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm resize-none" />
           </div>
-          <button type="submit" disabled={loading} className="w-full bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black py-3 rounded-xl font-semibold transition-all duration-300">
+          {/* General toggle */}
+          <label className="flex items-center gap-3 p-3 bg-burgos-dark-2 rounded-xl border border-burgos-gray-800 cursor-pointer hover:border-burgos-gold/20 transition-colors">
+            <input type="checkbox" checked={form.es_general} onChange={(e) => setForm({ ...form, es_general: e.target.checked })} className="w-4 h-4 accent-[#c9a84c] rounded" />
+            <div>
+              <p className="text-sm text-burgos-white">Expediente general</p>
+              <p className="text-[10px] text-burgos-gray-600">Visible para todos los abogados del estudio</p>
+            </div>
+          </label>
+          <button type="submit" disabled={loading} className="w-full bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black py-3 rounded-xl font-semibold transition-all">
             {loading ? "Creando..." : "Crear Expediente"}
           </button>
         </form>

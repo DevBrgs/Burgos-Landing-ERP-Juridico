@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/erp", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/erp/dashboard-director", label: "Dirección", icon: BarChart3 },
+  { href: "/erp/dashboard-director", label: "Métricas", icon: BarChart3 },
   { href: "/erp/expedientes", label: "Expedientes", icon: FolderOpen },
   { href: "/erp/turnos", label: "Turnos", icon: Calendar },
   { href: "/erp/tareas", label: "Tareas", icon: CheckSquare },
@@ -60,10 +60,7 @@ export function Sidebar() {
   }, []);
 
   // Filtrar items según rol
-  const visibleItems = navItems.filter((item) => {
-    if (item.href === "/erp/dashboard-director") return rol === "director";
-    return true;
-  });
+  const visibleItems = navItems.filter(() => true); // Todos ven todo ahora
 
   const isActive = (href: string) => {
     if (href === "/erp") return pathname === "/erp";

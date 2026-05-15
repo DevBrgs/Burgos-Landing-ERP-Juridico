@@ -18,8 +18,8 @@ export default function DashboardDirectorPage() {
     const fetch = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: abogado } = await supabase.from("abogados").select("rol").eq("user_id", user.id).single();
-      if (abogado?.rol !== "director") { setLoading(false); return; }
+      const { data: abogado } = await supabase.from("abogados").select("id, rol, nombre").eq("user_id", user.id).single();
+      if (!abogado) { setLoading(false); return; }
       setAutorizado(true);
 
       // Fetch all stats
@@ -66,7 +66,7 @@ export default function DashboardDirectorPage() {
   }, []);
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-burgos-gold/30 border-t-burgos-gold rounded-full animate-spin" /></div>;
-  if (!autorizado) return <div className="text-center py-16"><p className="text-burgos-gray-600">Acceso restringido al director del estudio.</p></div>;
+  if (!autorizado) return <div className="text-center py-16"><p className="text-burgos-gray-600">Cargando métricas...</p></div>;
 
   return (
     <div className="space-y-6">
