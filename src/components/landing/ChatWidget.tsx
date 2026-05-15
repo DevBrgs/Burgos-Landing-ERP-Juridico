@@ -43,17 +43,30 @@ export function ChatWidget() {
     setInput("");
     setIsLoading(true);
 
-    // TODO: Conectar con Claude API
-    setTimeout(() => {
+    // Llamar a la API de chat
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage.content, tipo: "publica" }),
+      });
+      const data = await res.json();
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content:
-          "Gracias por tu consulta. El asistente está en configuración. Para consultas urgentes, completá el formulario de contacto o llamanos al (011) 4567-8900.",
+        content: data.reply || "Disculpá, no pude procesar tu consulta. Intentá de nuevo.",
       };
       setMessages((prev) => [...prev, assistantMessage]);
+    } catch {
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Error de conexión. Para consultas urgentes, llamanos al (011) 4567-8900.",
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (

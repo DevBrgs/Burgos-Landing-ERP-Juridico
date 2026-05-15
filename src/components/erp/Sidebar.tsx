@@ -17,6 +17,7 @@ import {
   LogOut,
   Menu,
   X,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/erp/turnos", label: "Turnos", icon: Calendar },
   { href: "/erp/tareas", label: "Tareas", icon: CheckSquare },
   { href: "/erp/audiencias", label: "Audiencias", icon: Gavel },
+  { href: "/erp/ia", label: "Asistente IA", icon: Sparkles },
   { href: "/erp/newsletter", label: "Newsletter", icon: Newspaper },
   { href: "/erp/clientes", label: "Clientes", icon: Users },
   { href: "/erp/abogados", label: "Equipo", icon: UserPlus },
