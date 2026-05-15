@@ -12,11 +12,13 @@ import {
   X,
   Check,
   Pencil,
+  KeyRound,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Abogado {
   id: string;
+  user_id: string;
   nombre: string;
   email: string;
   especialidad: string;
@@ -34,6 +36,8 @@ export default function AbogadosPage() {
   const [currentRol, setCurrentRol] = useState<string>("asociado");
   const [showReasignar, setShowReasignar] = useState<Abogado | null>(null);
   const [editingMember, setEditingMember] = useState<Abogado | null>(null);
+  const [resetPasswordMember, setResetPasswordMember] = useState<Abogado | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
 
   const supabase = createClient();
 
@@ -50,6 +54,7 @@ export default function AbogadosPage() {
   const fetchCurrentRol = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    setCurrentUserId(user.id);
     const { data } = await supabase
       .from("abogados")
       .select("rol")
@@ -97,6 +102,15 @@ export default function AbogadosPage() {
   const canEdit = (member: Abogado) => {
     if (currentRol === "director") return true;
     if (currentRol === "asociado" && member.rol === "administrativo") return true;
+    return false;
+  };
+
+  const canResetPassword = (member: Abogado) => {
+    // Director can reset anyone's password
+    if (currentRol === "director") return true;
+    // Asociado can reset administrativo's password
+    if (currentRol === "asociado" && member.rol === "administrativo") return true;
+    // Nobody can reset the director's password except the director themselves
     return false;
   };
 
@@ -224,6 +238,15 @@ export default function AbogadosPage() {
                     <Pencil size={14} />
                   </button>
                 )}
+                {canResetPassword(abogado) && (
+                  <button
+                    onClick={() => setResetPasswordMember(abogado)}
+                    className="text-xs py-2 px-3 rounded-lg font-medium transition-all border bg-orange-500/5 border-orange-500/20 text-orange-400 hover:bg-orange-500/10"
+                    title="Resetear clave"
+                  >
+                    <KeyRound size={14} />
+                  </button>
+                )}
                 {/* Fix 3: Hide desactivar for director if current user is not director */}
                 {!(currentRol !== "director" && abogado.rol === "director") && (
                   <button
@@ -276,6 +299,15 @@ export default function AbogadosPage() {
             setEditingMember(null);
             fetchAbogados();
           }}
+        />
+      )}
+
+      {/* Modal de resetear clave */}
+      {resetPasswordMember && (
+        <ResetearClaveModal
+          abogado={resetPasswordMember}
+          onClose={() => setResetPasswordMember(null)}
+          onSuccess={() => setResetPasswordMember(null)}
         />
       )}
     </div>
@@ -611,7 +643,25 @@ function EditarMiembroModal({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [resetMsg, setResetMsg] = useState("");
   const supabase = createClient();
+
+  const handleResetPassword = async () => {
+    const res = await fetch("/api/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: abogado.user_id, newPassword }),
+    });
+    if (res.ok) {
+      setResetMsg("Contraseña actualizada correctamente");
+      setNewPassword("");
+      setTimeout(() => setResetMsg(""), 3000);
+    } else {
+      const data = await res.json();
+      setResetMsg(data.error || "Error al resetear");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -739,6 +789,31 @@ function EditarMiembroModal({
             />
           </div>
 
+          <hr className="border-burgos-gray-800 my-4" />
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+              Resetear contraseña
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Nueva contraseña (mín. 8 chars)"
+                className="flex-1 px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={!newPassword || newPassword.length < 8}
+                className="px-4 py-2.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-xl text-xs font-medium hover:bg-amber-500/20 disabled:opacity-40 transition-colors"
+              >
+                Resetear
+              </button>
+            </div>
+            {resetMsg && <p className="text-[10px] text-green-400 mt-1">{resetMsg}</p>}
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -754,6 +829,104 @@ function EditarMiembroModal({
             )}
           </button>
         </form>
+      </motion.div>
+    </div>
+  );
+}
+
+
+function ResetearClaveModal({
+  abogado,
+  onClose,
+  onSuccess,
+}: {
+  abogado: Abogado;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [newPassword, setNewPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const handleReset = async () => {
+    setLoading(true);
+    setMsg("");
+    const res = await fetch("/api/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: abogado.user_id, newPassword }),
+    });
+    if (res.ok) {
+      setMsg("Contraseña actualizada correctamente");
+      setNewPassword("");
+      setTimeout(() => onSuccess(), 1500);
+    } else {
+      const data = await res.json();
+      setMsg(data.error || "Error al resetear");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 w-full max-w-md"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-burgos-white">
+            Resetear Contraseña
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-burgos-gray-600 hover:text-burgos-white transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <p className="text-sm text-burgos-gray-400 mb-4">
+          Resetear contraseña de <strong className="text-burgos-white">{abogado.nombre}</strong>
+        </p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+              Nueva contraseña
+            </label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Mínimo 8 caracteres"
+              className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm"
+            />
+          </div>
+
+          {msg && (
+            <p className={`text-xs ${msg.includes("Error") ? "text-red-400" : "text-green-400"}`}>
+              {msg}
+            </p>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 text-sm py-3 rounded-xl font-medium border border-burgos-gray-800 text-burgos-gray-400 hover:text-burgos-white hover:border-burgos-gray-600 transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleReset}
+              disabled={!newPassword || newPassword.length < 8 || loading}
+              className="flex-1 text-sm py-3 rounded-xl font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-40 transition-all"
+            >
+              {loading ? "Reseteando..." : "Resetear Clave"}
+            </button>
+          </div>
+        </div>
       </motion.div>
     </div>
   );

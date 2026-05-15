@@ -149,9 +149,13 @@ html {
 .light-mode .bg-burgos-dark\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
 
 .light-mode .text-burgos-white { color: #1a1a2e !important; }
+.light-mode .text-burgos-gray-200 { color: #333344 !important; }
 .light-mode .text-burgos-gray-300 { color: #444455 !important; }
 .light-mode .text-burgos-gray-400 { color: #555566 !important; }
 .light-mode .text-burgos-gray-600 { color: #888899 !important; }
+
+/* Fix: Escritos result text and IA chat bubbles */
+.light-mode pre { color: #1a1a2e !important; }
 
 .light-mode .border-burgos-gray-800 { border-color: #d4d4dc !important; }
 .light-mode .border-burgos-gray-800\/50 { border-color: rgba(212, 212, 220, 0.5) !important; }
