@@ -293,6 +293,22 @@ function NuevoTurnoModal({
 
     if (!abogado) return;
 
+    // Validar que no haya turno duplicado (misma fecha y hora para el mismo abogado)
+    const { data: existente } = await supabase
+      .from("turnos")
+      .select("id")
+      .eq("abogado_id", abogado.id)
+      .eq("fecha", form.fecha)
+      .eq("hora", form.hora)
+      .neq("estado", "cancelado")
+      .limit(1);
+
+    if (existente && existente.length > 0) {
+      alert("Ya existe un turno para esa fecha y hora. Elegí otro horario.");
+      setLoading(false);
+      return;
+    }
+
     await supabase.from("turnos").insert({
       abogado_id: abogado.id,
       fecha: form.fecha,

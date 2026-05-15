@@ -225,9 +225,18 @@ function TareaCard({ tarea, onUpdate }: { tarea: Tarea; onUpdate: (id: string, e
 }
 
 function NuevaTareaModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ titulo: "", descripcion: "", prioridad: "normal", vence_en: "" });
+  const [form, setForm] = useState({ titulo: "", descripcion: "", prioridad: "normal", vence_en: "", asignado_a: "" });
   const [loading, setLoading] = useState(false);
+  const [abogados, setAbogados] = useState<{ id: string; nombre: string }[]>([]);
   const supabase = createClient();
+
+  useEffect(() => {
+    const fetchAbogados = async () => {
+      const { data } = await supabase.from("abogados").select("id, nombre").eq("activo", true);
+      if (data) setAbogados(data);
+    };
+    fetchAbogados();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,7 +249,7 @@ function NuevaTareaModal({ onClose, onSuccess }: { onClose: () => void; onSucces
     if (!abogado) return;
 
     await supabase.from("tareas").insert({
-      asignado_a: abogado.id,
+      asignado_a: form.asignado_a || abogado.id,
       creado_por: abogado.id,
       titulo: form.titulo,
       descripcion: form.descripcion || null,
@@ -268,6 +277,13 @@ function NuevaTareaModal({ onClose, onSuccess }: { onClose: () => void; onSucces
           <div>
             <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Descripción</label>
             <textarea value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} rows={2} placeholder="Detalles..." className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm resize-none" />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Asignar a</label>
+            <select value={form.asignado_a} onChange={(e) => setForm({ ...form, asignado_a: e.target.value })} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm appearance-none">
+              <option value="" className="bg-burgos-dark">Yo mismo</option>
+              {abogados.map((a) => <option key={a.id} value={a.id} className="bg-burgos-dark">{a.nombre}</option>)}
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

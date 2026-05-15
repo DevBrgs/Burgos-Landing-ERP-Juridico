@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { FileUpload } from "@/components/ui/FileUpload";
 
 interface Expediente {
   id: string;
@@ -36,6 +37,14 @@ interface Actuacion {
   creado_en: string;
 }
 
+interface Documento {
+  id: string;
+  nombre: string;
+  tipo: string | null;
+  url: string;
+  creado_en: string;
+}
+
 const estadoLabels: Record<string, string> = {
   activo: "Activo",
   en_espera: "En espera",
@@ -49,6 +58,7 @@ export default function ExpedienteDetallePage() {
   const id = params.id as string;
   const [expediente, setExpediente] = useState<Expediente | null>(null);
   const [actuaciones, setActuaciones] = useState<Actuacion[]>([]);
+  const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [loading, setLoading] = useState(true);
   const [showActuacion, setShowActuacion] = useState(false);
   const [editando, setEditando] = useState(false);
@@ -56,12 +66,14 @@ export default function ExpedienteDetallePage() {
 
   useEffect(() => {
     const fetch = async () => {
-      const [expRes, actRes] = await Promise.all([
+      const [expRes, actRes, docRes] = await Promise.all([
         supabase.from("expedientes").select("*").eq("id", id).single(),
         supabase.from("actuaciones").select("*").eq("expediente_id", id).order("fecha", { ascending: false }),
+        supabase.from("documentos").select("*").eq("expediente_id", id).order("creado_en", { ascending: false }),
       ]);
       if (expRes.data) setExpediente(expRes.data);
       if (actRes.data) setActuaciones(actRes.data);
+      if (docRes.data) setDocumentos(docRes.data);
       setLoading(false);
     };
     fetch();
@@ -162,6 +174,61 @@ export default function ExpedienteDetallePage() {
           </p>
         </motion.div>
       </div>
+
+      {/* Documentos adjuntos */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-burgos-white flex items-center gap-2">
+            <FileText size={16} className="text-burgos-gold" />
+            Documentos ({documentos.length})
+          </h2>
+        </div>
+
+        <FileUpload
+          bucket="expedientes-docs"
+          folder={id}
+          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+          maxSizeMB={20}
+          label="Adjuntar documento"
+          onUpload={async (url, fileName) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            const { data: abogado } = await supabase.from("abogados").select("id").eq("user_id", user!.id).single();
+            await supabase.from("documentos").insert({
+              expediente_id: id,
+              nombre: fileName,
+              tipo: fileName.split(".").pop() || null,
+              url,
+              subido_por: abogado?.id || null,
+            });
+            const { data } = await supabase.from("documentos").select("*").eq("expediente_id", id).order("creado_en", { ascending: false });
+            if (data) setDocumentos(data);
+          }}
+        />
+
+        {documentos.length > 0 && (
+          <div className="mt-4 space-y-2">
+            {documentos.map((doc) => (
+              <div key={doc.id} className="flex items-center justify-between p-3 bg-burgos-dark-2 rounded-xl border border-burgos-gray-800">
+                <div className="flex items-center gap-3">
+                  <FileText size={16} className="text-burgos-gold" />
+                  <div>
+                    <p className="text-sm text-burgos-white">{doc.nombre}</p>
+                    <p className="text-[10px] text-burgos-gray-600">{new Date(doc.creado_en).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <a
+                  href={doc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-burgos-gold hover:text-burgos-gold-light transition-colors"
+                >
+                  Descargar
+                </a>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
 
       {/* Modal nueva actuación */}
       {showActuacion && (

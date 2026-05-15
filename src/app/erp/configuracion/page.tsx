@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Settings,
   Bell,
@@ -12,6 +12,7 @@ import {
   Palette,
   Key,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 const secciones = [
   {
@@ -66,6 +67,25 @@ const secciones = [
 
 export default function ConfiguracionPage() {
   const [seccionActiva, setSeccionActiva] = useState("general");
+  const [rol, setRol] = useState<string>("asociado");
+  const supabase = createClient();
+
+  useEffect(() => {
+    const getRol = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("abogados").select("rol").eq("user_id", user.id).single();
+      if (data) setRol(data.rol);
+    };
+    getRol();
+  }, []);
+
+  // Filtrar secciones según rol
+  const seccionesVisibles = secciones.filter((sec) => {
+    if (rol === "director") return true;
+    // Asociados solo ven general, notificaciones y landing
+    return ["general", "notificaciones", "landing"].includes(sec.id);
+  });
 
   return (
     <div className="space-y-6">
@@ -90,7 +110,7 @@ export default function ConfiguracionPage() {
           transition={{ delay: 0.1 }}
           className="space-y-1"
         >
-          {secciones.map((sec) => {
+          {seccionesVisibles.map((sec) => {
             const Icon = sec.icon;
             return (
               <button
