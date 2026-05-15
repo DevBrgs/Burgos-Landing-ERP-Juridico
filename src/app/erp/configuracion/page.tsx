@@ -158,6 +158,10 @@ export default function ConfiguracionPage() {
 function ConfigGeneral() {
   const [jusVerbal, setJusVerbal] = useState("");
   const [jusEscrito, setJusEscrito] = useState("");
+  const [direccion, setDireccion] = useState("Av. Corrientes 1234, Piso 8, CABA");
+  const [telefono, setTelefono] = useState("(011) 4567-8900");
+  const [emailContacto, setEmailContacto] = useState("contacto@burgos.com.ar");
+  const [horario, setHorario] = useState("Lunes a Viernes, 9:00 a 18:00");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -167,16 +171,29 @@ function ConfigGeneral() {
       const data = await res.json();
       if (data.jus_verbal) setJusVerbal(data.jus_verbal);
       if (data.jus_escrito) setJusEscrito(data.jus_escrito);
+      if (data.direccion) setDireccion(data.direccion);
+      if (data.telefono) setTelefono(data.telefono);
+      if (data.email_contacto) setEmailContacto(data.email_contacto);
+      if (data.horario) setHorario(data.horario);
     };
     fetchConfig();
   }, []);
 
   const guardar = async () => {
     setSaving(true);
-    await fetch("/api/configuracion", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clave: "jus_verbal", valor: jusVerbal }) });
-    await fetch("/api/configuracion", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clave: "jus_escrito", valor: jusEscrito }) });
+    const updates = [
+      { clave: "jus_verbal", valor: jusVerbal },
+      { clave: "jus_escrito", valor: jusEscrito },
+      { clave: "direccion", valor: direccion },
+      { clave: "telefono", valor: telefono },
+      { clave: "email_contacto", valor: emailContacto },
+      { clave: "horario", valor: horario },
+    ];
+    for (const u of updates) {
+      await fetch("/api/configuracion", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(u) });
+    }
     setSaving(false);
-    setMsg("Valores actualizados. Se reflejan en la landing automáticamente.");
+    setMsg("Configuración guardada correctamente.");
     setTimeout(() => setMsg(""), 3000);
   };
 
@@ -198,23 +215,33 @@ function ConfigGeneral() {
         </div>
       </div>
 
-      <button onClick={guardar} disabled={saving} className="bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black px-6 py-2.5 rounded-xl font-semibold text-sm transition-all">
-        {saving ? "Guardando..." : "Actualizar valores"}
-      </button>
-
       <hr className="border-burgos-gray-800 my-6" />
 
-      <h2 className="text-lg font-semibold text-burgos-white">Datos del Estudio</h2>
+      <h2 className="text-lg font-semibold text-burgos-white">Datos de Contacto</h2>
+      <p className="text-sm text-burgos-gray-400">Esta información aparece en la landing y en el chat de IA.</p>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Nombre del estudio</label>
-          <input type="text" defaultValue="Burgos & Asociados" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
+          <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Dirección</label>
+          <input type="text" value={direccion} onChange={(e) => setDireccion(e.target.value)} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
         </div>
         <div>
           <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Teléfono</label>
-          <input type="text" defaultValue="(011) 4567-8900" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
+          <input type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
+        </div>
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Email de contacto</label>
+          <input type="email" value={emailContacto} onChange={(e) => setEmailContacto(e.target.value)} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
+        </div>
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Horario de atención</label>
+          <input type="text" value={horario} onChange={(e) => setHorario(e.target.value)} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
         </div>
       </div>
+
+      <button onClick={guardar} disabled={saving} className="bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black px-6 py-2.5 rounded-xl font-semibold text-sm transition-all">
+        {saving ? "Guardando..." : "Guardar todo"}
+      </button>
     </div>
   );
 }

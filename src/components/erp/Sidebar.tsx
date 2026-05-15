@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -45,6 +45,25 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [rol, setRol] = useState<string>("asociado");
+
+  useEffect(() => {
+    const getRol = async () => {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("abogados").select("rol").eq("user_id", user.id).single();
+      if (data) setRol(data.rol);
+    };
+    getRol();
+  }, []);
+
+  // Filtrar items según rol
+  const visibleItems = navItems.filter((item) => {
+    if (item.href === "/erp/dashboard-director") return rol === "director";
+    return true;
+  });
 
   const isActive = (href: string) => {
     if (href === "/erp") return pathname === "/erp";
@@ -72,7 +91,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
           return (
