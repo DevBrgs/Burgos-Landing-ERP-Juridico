@@ -43,11 +43,17 @@ export default function TareasPage() {
   const supabase = createClient();
 
   const fetchTareas = async () => {
-    const { data } = await supabase
-      .from("tareas")
-      .select("*")
-      .order("vence_en", { ascending: true, nullsFirst: false })
-      .order("creado_en", { ascending: false });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: abogado } = await supabase.from("abogados").select("id, rol").eq("user_id", user.id).single();
+    if (!abogado) return;
+
+    let query = supabase.from("tareas").select("*").order("vence_en", { ascending: true, nullsFirst: false }).order("creado_en", { ascending: false });
+    if (abogado.rol !== "director") {
+      query = query.eq("asignado_a", abogado.id);
+    }
+
+    const { data } = await query;
     if (data) setTareas(data);
     setLoading(false);
   };

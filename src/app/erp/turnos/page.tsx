@@ -46,11 +46,19 @@ export default function TurnosPage() {
   const supabase = createClient();
 
   const fetchTurnos = async () => {
-    const { data } = await supabase
-      .from("turnos")
-      .select("*")
-      .order("fecha", { ascending: true })
-      .order("hora", { ascending: true });
+    // Obtener el abogado actual para filtrar SUS turnos
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: abogado } = await supabase.from("abogados").select("id, rol").eq("user_id", user.id).single();
+    if (!abogado) return;
+
+    // Director ve todos, asociado ve solo los suyos
+    let query = supabase.from("turnos").select("*").order("fecha", { ascending: true }).order("hora", { ascending: true });
+    if (abogado.rol !== "director") {
+      query = query.eq("abogado_id", abogado.id);
+    }
+
+    const { data } = await query;
     if (data) setTurnos(data);
     setLoading(false);
   };

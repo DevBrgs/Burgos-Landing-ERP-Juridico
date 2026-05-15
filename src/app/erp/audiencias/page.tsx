@@ -40,10 +40,17 @@ export default function AudienciasPage() {
   const supabase = createClient();
 
   const fetchAudiencias = async () => {
-    const { data } = await supabase
-      .from("audiencias")
-      .select("*")
-      .order("fecha", { ascending: true });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: abogado } = await supabase.from("abogados").select("id, rol").eq("user_id", user.id).single();
+    if (!abogado) return;
+
+    let query = supabase.from("audiencias").select("*").order("fecha", { ascending: true });
+    if (abogado.rol !== "director") {
+      query = query.eq("abogado_id", abogado.id);
+    }
+
+    const { data } = await query;
     if (data) setAudiencias(data);
     setLoading(false);
   };

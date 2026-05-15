@@ -38,29 +38,46 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleChatPublico(message: string) {
+  const supabase = getSupabase();
+
+  // Obtener abogados activos para contexto
+  const { data: abogados } = await supabase
+    .from("abogados")
+    .select("id, nombre, especialidad, areas")
+    .eq("activo", true);
+
+  const equipoInfo = abogados?.map(a => `- ${a.nombre}: ${a.especialidad} (${a.areas?.join(", ") || ""})`).join("\n") || "No hay abogados registrados";
+
   const completion = await groq.chat.completions.create({
     messages: [
       {
         role: "system",
-        content: `Sos el asistente virtual de Burgos & Asociados, un estudio jurídico de Buenos Aires, Argentina.
+        content: `Sos el asistente virtual de Burgos & Asociados, un estudio jurídico ubicado en Av. Corrientes 1234, Piso 8, CABA, Buenos Aires, Argentina.
+Horario: Lunes a Viernes de 9:00 a 18:00.
+Teléfono: (011) 4567-8900.
+Email: contacto@burgos.com.ar
 
-REGLAS ESTRICTAS:
-- Respondé SOLO sobre el estudio: horarios (Lun-Vie 9-18hs), ubicación (Av. Corrientes 1234, Piso 8, CABA), áreas de práctica, y cómo solicitar un turno.
-- NO des asesoría legal bajo ninguna circunstancia.
-- Si preguntan algo legal específico, decí: "Para consultas legales específicas, te recomiendo reservar un turno con uno de nuestros profesionales."
-- Respuestas CORTAS: máximo 3-4 líneas.
-- Tono: profesional, cordial, argentino (vos/tuteo).
-- Áreas: Civil, Comercial, Laboral, Penal, Familia, Administrativo, Societario.
-- Para turnos: pedí nombre, DNI, motivo y horario preferido.`,
+EQUIPO DEL ESTUDIO:
+${equipoInfo}
+
+REGLAS ABSOLUTAS — NO NEGOCIABLES:
+1. SOLO respondés sobre el estudio jurídico Burgos & Asociados: ubicación, horarios, equipo, áreas de práctica, y gestión de turnos.
+2. NO das asesoría legal, NO opinás sobre casos, NO sugerís estrategias legales, NO analizás situaciones jurídicas.
+3. NO ayudás con NADA que no sea del estudio: no programás, no das recetas, no ayudás con tareas, no charlás.
+4. Si te piden algo fuera del estudio, respondé EXACTAMENTE: "Solo puedo ayudarte con información sobre Burgos & Asociados y la gestión de turnos. ¿Necesitás agendar una consulta?"
+5. Para turnos: preguntá nombre, DNI, motivo de consulta, y fecha/hora preferida. Sugerí el abogado más adecuado según el área de consulta.
+6. Si alguien consulta por un tema legal, orientá sobre QUÉ ÁREA corresponde y sugerí agendar turno con el abogado especialista. NO des la respuesta legal.
+7. Respuestas CORTAS: máximo 3 líneas. Sin listas largas, sin explicaciones extensas.
+8. Tono: profesional, cordial, argentino (vos/tuteo). Sin emojis.`,
       },
       { role: "user", content: message },
     ],
     model: "llama-3.1-8b-instant",
-    temperature: 0.3,
-    max_tokens: 300,
+    temperature: 0.2,
+    max_tokens: 200,
   });
 
-  const reply = completion.choices[0]?.message?.content || "Disculpá, no pude procesar tu consulta.";
+  const reply = completion.choices[0]?.message?.content || "Solo puedo ayudarte con información sobre Burgos & Asociados y la gestión de turnos.";
 
   return NextResponse.json({ reply });
 }

@@ -48,10 +48,18 @@ export default function ExpedientesPage() {
   const supabase = createClient();
 
   const fetchExpedientes = async () => {
-    const { data } = await supabase
-      .from("expedientes")
-      .select("*")
-      .order("creado_en", { ascending: false });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: abogado } = await supabase.from("abogados").select("id, rol").eq("user_id", user.id).single();
+    if (!abogado) return;
+
+    let query = supabase.from("expedientes").select("*").order("creado_en", { ascending: false });
+    if (abogado.rol !== "director") {
+      // Ver propios + donde es colaborador
+      query = query.or(`abogado_id.eq.${abogado.id}`);
+    }
+
+    const { data } = await query;
     if (data) setExpedientes(data);
     setLoading(false);
   };
