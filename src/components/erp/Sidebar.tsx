@@ -22,6 +22,7 @@ import {
   DollarSign,
   BarChart3,
   MessageSquare,
+  FilePen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ const navItems = [
   { href: "/erp/honorarios", label: "Honorarios", icon: DollarSign },
   { href: "/erp/mensajes", label: "Mensajes", icon: MessageSquare },
   { href: "/erp/ia", label: "Asistente IA", icon: Sparkles },
+  { href: "/erp/escritos", label: "Escritos", icon: FilePen },
   { href: "/erp/newsletter", label: "Newsletter", icon: Newspaper },
   { href: "/erp/clientes", label: "Clientes", icon: Users },
   { href: "/erp/abogados", label: "Equipo", icon: UserPlus },
