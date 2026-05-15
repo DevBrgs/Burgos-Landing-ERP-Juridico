@@ -7,12 +7,12 @@ import Link from "next/link";
 import Image from "next/image";
 
 const navLinks = [
-  { href: "#inicio", label: "Inicio" },
-  { href: "#newsletter", label: "Novedades" },
-  { href: "#equipo", label: "Equipo" },
-  { href: "#areas", label: "Áreas" },
-  { href: "#servicios", label: "Honorarios" },
-  { href: "#contacto", label: "Contacto" },
+  { href: "/#inicio", label: "Inicio" },
+  { href: "/#newsletter", label: "Novedades" },
+  { href: "/#equipo", label: "Equipo" },
+  { href: "/#areas", label: "Áreas" },
+  { href: "/#servicios", label: "Honorarios" },
+  { href: "/#contacto", label: "Contacto" },
 ];
 
 export function Navbar() {
@@ -62,14 +62,14 @@ export function Navbar() {
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.href}
                 href={link.href}
                 className="relative px-4 py-2 text-burgos-gray-400 hover:text-burgos-gold transition-colors text-sm font-medium group"
               >
                 {link.label}
                 <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[1px] bg-burgos-gold group-hover:w-4/5 transition-all duration-300" />
-              </a>
+              </Link>
             ))}
             <Link
               href="/portal"
@@ -101,14 +101,14 @@ export function Navbar() {
             >
               <div className="py-4 space-y-1 border-t border-burgos-gray-800">
                 {navLinks.map((link) => (
-                  <a
+                  <Link
                     key={link.href}
                     href={link.href}
                     onClick={() => setIsOpen(false)}
                     className="block text-burgos-gray-400 hover:text-burgos-gold transition-colors text-sm font-medium py-3 px-2"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 ))}
                 <Link
                   href="/portal"

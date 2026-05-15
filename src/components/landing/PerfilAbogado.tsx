@@ -105,11 +105,19 @@ export function PerfilAbogado({ id }: { id: string }) {
                 <p className="text-burgos-white font-semibold">{abogado.areas?.length || 0}</p>
                 <p className="text-burgos-gray-600 text-xs">Áreas de práctica</p>
               </div>
-              <div className="bg-burgos-dark-2 rounded-xl border border-burgos-gray-800 p-4 text-center">
-                <Mail size={18} className="text-burgos-gold mx-auto mb-2" />
-                <p className="text-burgos-white font-semibold text-sm">{abogado.email}</p>
-                <p className="text-burgos-gray-600 text-xs">Contacto</p>
-              </div>
+              {abogado.email ? (
+                <a href={`mailto:${abogado.email}`} className="bg-burgos-dark-2 rounded-xl border border-burgos-gray-800 p-4 text-center hover:border-burgos-gold/30 transition-colors">
+                  <Mail size={18} className="text-burgos-gold mx-auto mb-2" />
+                  <p className="text-burgos-white font-semibold text-sm">{abogado.email}</p>
+                  <p className="text-burgos-gray-600 text-xs">Contacto</p>
+                </a>
+              ) : (
+                <div className="bg-burgos-dark-2 rounded-xl border border-burgos-gray-800 p-4 text-center">
+                  <Mail size={18} className="text-burgos-gold mx-auto mb-2" />
+                  <p className="text-burgos-gray-400 font-semibold text-sm">Sin email configurado</p>
+                  <p className="text-burgos-gray-600 text-xs">Contacto</p>
+                </div>
+              )}
             </div>
 
             {/* Areas */}
