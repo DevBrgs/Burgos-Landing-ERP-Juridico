@@ -1,80 +1,29 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FolderOpen,
   Plus,
   Search,
-  Filter,
-  MoreVertical,
   Eye,
+  X,
 } from "lucide-react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
-// Datos placeholder
-const expedientes = [
-  {
-    id: "1",
-    caratula: "García, Juan c/ López, María s/ Daños y Perjuicios",
-    numero: "45.231/2024",
-    fuero: "Civil",
-    juzgado: "Juzgado Civil N° 45",
-    estado: "activo",
-    abogado: "Dr. Martín Burgos",
-    cliente: "Juan García",
-    ultimaActuacion: "Contestación de demanda presentada",
-    fecha: "12 May 2025",
-  },
-  {
-    id: "2",
-    caratula: "Martínez, Pedro c/ OSDE s/ Amparo",
-    numero: "12.876/2025",
-    fuero: "Laboral",
-    juzgado: "Juzgado Laboral N° 12",
-    estado: "activo",
-    abogado: "Dra. Laura Méndez",
-    cliente: "Pedro Martínez",
-    ultimaActuacion: "Audiencia preliminar fijada",
-    fecha: "10 May 2025",
-  },
-  {
-    id: "3",
-    caratula: "Rodríguez, Ana c/ Estado Nacional s/ Recurso",
-    numero: "8.432/2024",
-    fuero: "Administrativo",
-    juzgado: "Cámara Federal",
-    estado: "en_espera",
-    abogado: "Dr. Alejandro Torres",
-    cliente: "Ana Rodríguez",
-    ultimaActuacion: "Esperando resolución de Cámara",
-    fecha: "5 May 2025",
-  },
-  {
-    id: "4",
-    caratula: "Fernández c/ Fernández s/ Divorcio",
-    numero: "22.109/2025",
-    fuero: "Familia",
-    juzgado: "Juzgado de Familia N° 3",
-    estado: "activo",
-    abogado: "Dra. Carolina Vega",
-    cliente: "María Fernández",
-    ultimaActuacion: "Mediación programada",
-    fecha: "8 May 2025",
-  },
-  {
-    id: "5",
-    caratula: "Gómez, Ricardo s/ Estafa",
-    numero: "3.211/2024",
-    fuero: "Penal",
-    juzgado: "Juzgado Penal N° 7",
-    estado: "cerrado",
-    abogado: "Dr. Federico Ruiz",
-    cliente: "Ricardo Gómez",
-    ultimaActuacion: "Sentencia absolutoria firme",
-    fecha: "1 May 2025",
-  },
-];
+interface Expediente {
+  id: string;
+  caratula: string;
+  numero: string | null;
+  fuero: string | null;
+  juzgado: string | null;
+  estado: string;
+  notas_internas: string | null;
+  creado_en: string;
+  abogado_id: string;
+  cliente_id: string | null;
+}
 
 const estadoStyles: Record<string, string> = {
   activo: "bg-green-500/10 text-green-400 border-green-500/20",
@@ -91,16 +40,32 @@ const estadoLabels: Record<string, string> = {
 };
 
 export default function ExpedientesPage() {
+  const [expedientes, setExpedientes] = useState<Expediente[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [busqueda, setBusqueda] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const supabase = createClient();
+
+  const fetchExpedientes = async () => {
+    const { data } = await supabase
+      .from("expedientes")
+      .select("*")
+      .order("creado_en", { ascending: false });
+    if (data) setExpedientes(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchExpedientes();
+  }, []);
 
   const filtered = expedientes.filter((exp) => {
     const matchEstado = filtroEstado === "todos" || exp.estado === filtroEstado;
     const matchBusqueda =
       busqueda === "" ||
       exp.caratula.toLowerCase().includes(busqueda.toLowerCase()) ||
-      exp.numero.includes(busqueda) ||
-      exp.cliente.toLowerCase().includes(busqueda.toLowerCase());
+      (exp.numero && exp.numero.includes(busqueda));
     return matchEstado && matchBusqueda;
   });
 
@@ -110,7 +75,6 @@ export default function ExpedientesPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
@@ -122,7 +86,10 @@ export default function ExpedientesPage() {
             {expedientes.length} expedientes en total
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300">
+        <button
+          onClick={() => setShowModal(true)}
+          className="inline-flex items-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300"
+        >
           <Plus size={16} />
           Nuevo Expediente
         </button>
@@ -132,24 +99,21 @@ export default function ExpedientesPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
+        transition={{ delay: 0.1 }}
         className="flex flex-col sm:flex-row gap-3"
       >
         <div className="relative flex-1">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-burgos-gray-600"
-          />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-burgos-gray-600" />
           <input
             type="text"
-            placeholder="Buscar por carátula, número o cliente..."
+            placeholder="Buscar por carátula o número..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 bg-burgos-dark border border-burgos-gray-800 rounded-xl text-sm text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/30 transition-colors"
           />
         </div>
-        <div className="flex gap-2">
-          {["todos", "activo", "en_espera", "cerrado"].map((estado) => (
+        <div className="flex gap-2 flex-wrap">
+          {["todos", "activo", "en_espera", "cerrado", "archivado"].map((estado) => (
             <button
               key={estado}
               onClick={() => setFiltroEstado(estado)}
@@ -169,89 +133,177 @@ export default function ExpedientesPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
+        transition={{ delay: 0.2 }}
         className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 overflow-hidden"
       >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-burgos-gray-800">
-                <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium">
-                  Carátula
-                </th>
-                <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium hidden md:table-cell">
-                  N° Expediente
-                </th>
-                <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium hidden lg:table-cell">
-                  Abogado
-                </th>
-                <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium">
-                  Estado
-                </th>
-                <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium hidden sm:table-cell">
-                  Última actuación
-                </th>
-                <th className="px-5 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((exp) => (
-                <tr
-                  key={exp.id}
-                  className="border-b border-burgos-gray-800/50 hover:bg-burgos-dark-2 transition-colors"
-                >
-                  <td className="px-5 py-4">
-                    <p className="text-sm text-burgos-white font-medium line-clamp-2">
-                      {exp.caratula}
-                    </p>
-                    <p className="text-[10px] text-burgos-gray-600 mt-0.5">
-                      {exp.fuero} · {exp.juzgado}
-                    </p>
-                  </td>
-                  <td className="px-5 py-4 hidden md:table-cell">
-                    <span className="text-sm text-burgos-gray-400 font-mono">
-                      {exp.numero}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4 hidden lg:table-cell">
-                    <span className="text-sm text-burgos-gray-400">
-                      {exp.abogado}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span
-                      className={`text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full border ${estadoStyles[exp.estado]}`}
-                    >
-                      {estadoLabels[exp.estado]}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4 hidden sm:table-cell">
-                    <p className="text-xs text-burgos-gray-400">
-                      {exp.ultimaActuacion}
-                    </p>
-                    <p className="text-[10px] text-burgos-gray-600">{exp.fecha}</p>
-                  </td>
-                  <td className="px-5 py-4">
-                    <Link
-                      href={`/erp/expedientes/${exp.id}`}
-                      className="w-8 h-8 bg-burgos-dark-2 border border-burgos-gray-800 hover:border-burgos-gold/30 rounded-lg flex items-center justify-center text-burgos-gray-400 hover:text-burgos-gold transition-all"
-                    >
-                      <Eye size={14} />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filtered.length === 0 && (
+        {loading ? (
           <div className="text-center py-12">
+            <div className="w-8 h-8 border-2 border-burgos-gold/30 border-t-burgos-gold rounded-full animate-spin mx-auto" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12">
+            <FolderOpen size={40} className="text-burgos-gray-800 mx-auto mb-3" />
             <p className="text-burgos-gray-600 text-sm">
-              No se encontraron expedientes.
+              {expedientes.length === 0 ? "No hay expedientes. Creá el primero." : "No se encontraron resultados."}
             </p>
           </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-burgos-gray-800">
+                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium">Carátula</th>
+                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium hidden md:table-cell">N° Expediente</th>
+                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium hidden lg:table-cell">Fuero</th>
+                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium">Estado</th>
+                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium hidden sm:table-cell">Fecha</th>
+                  <th className="px-5 py-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((exp) => (
+                  <tr key={exp.id} className="border-b border-burgos-gray-800/50 hover:bg-burgos-dark-2 transition-colors">
+                    <td className="px-5 py-4">
+                      <p className="text-sm text-burgos-white font-medium line-clamp-2">{exp.caratula}</p>
+                      {exp.juzgado && <p className="text-[10px] text-burgos-gray-600 mt-0.5">{exp.juzgado}</p>}
+                    </td>
+                    <td className="px-5 py-4 hidden md:table-cell">
+                      <span className="text-sm text-burgos-gray-400 font-mono">{exp.numero || "—"}</span>
+                    </td>
+                    <td className="px-5 py-4 hidden lg:table-cell">
+                      <span className="text-sm text-burgos-gray-400">{exp.fuero || "—"}</span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`text-[9px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full border ${estadoStyles[exp.estado]}`}>
+                        {estadoLabels[exp.estado]}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 hidden sm:table-cell">
+                      <span className="text-xs text-burgos-gray-600">{new Date(exp.creado_en).toLocaleDateString()}</span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <Link
+                        href={`/erp/expedientes/${exp.id}`}
+                        className="w-8 h-8 bg-burgos-dark-2 border border-burgos-gray-800 hover:border-burgos-gold/30 rounded-lg flex items-center justify-center text-burgos-gray-400 hover:text-burgos-gold transition-all"
+                      >
+                        <Eye size={14} />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
+      </motion.div>
+
+      {showModal && (
+        <NuevoExpedienteModal onClose={() => setShowModal(false)} onSuccess={() => { setShowModal(false); fetchExpedientes(); }} />
+      )}
+    </div>
+  );
+}
+
+function NuevoExpedienteModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [form, setForm] = useState({
+    caratula: "",
+    numero: "",
+    fuero: "",
+    juzgado: "",
+    estado: "activo",
+    notas_internas: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const supabase = createClient();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setError("No autenticado"); setLoading(false); return; }
+
+    const { data: abogado } = await supabase.from("abogados").select("id").eq("user_id", user.id).single();
+    if (!abogado) { setError("Perfil no encontrado"); setLoading(false); return; }
+
+    const { error: insertError } = await supabase.from("expedientes").insert({
+      caratula: form.caratula,
+      numero: form.numero || null,
+      fuero: form.fuero || null,
+      juzgado: form.juzgado || null,
+      estado: form.estado,
+      notas_internas: form.notas_internas || null,
+      abogado_id: abogado.id,
+    });
+
+    if (insertError) {
+      setError(insertError.message);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    onSuccess();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-burgos-white">Nuevo Expediente</h2>
+          <button onClick={onClose} className="text-burgos-gray-600 hover:text-burgos-white"><X size={20} /></button>
+        </div>
+
+        {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-xl mb-4">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Carátula *</label>
+            <input type="text" required value={form.caratula} onChange={(e) => setForm({ ...form, caratula: e.target.value })} placeholder="García, Juan c/ López, María s/ Daños y Perjuicios" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">N° Expediente</label>
+              <input type="text" value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} placeholder="45.231/2024" className="w-full px-3 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Fuero</label>
+              <select value={form.fuero} onChange={(e) => setForm({ ...form, fuero: e.target.value })} className="w-full px-3 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm appearance-none">
+                <option value="" className="bg-burgos-dark">Seleccionar</option>
+                <option value="Civil" className="bg-burgos-dark">Civil</option>
+                <option value="Comercial" className="bg-burgos-dark">Comercial</option>
+                <option value="Laboral" className="bg-burgos-dark">Laboral</option>
+                <option value="Penal" className="bg-burgos-dark">Penal</option>
+                <option value="Familia" className="bg-burgos-dark">Familia</option>
+                <option value="Administrativo" className="bg-burgos-dark">Administrativo</option>
+                <option value="Federal" className="bg-burgos-dark">Federal</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Juzgado</label>
+            <input type="text" value={form.juzgado} onChange={(e) => setForm({ ...form, juzgado: e.target.value })} placeholder="Juzgado Civil N° 45" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Estado</label>
+            <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm appearance-none">
+              <option value="activo" className="bg-burgos-dark">Activo</option>
+              <option value="en_espera" className="bg-burgos-dark">En espera</option>
+              <option value="cerrado" className="bg-burgos-dark">Cerrado</option>
+              <option value="archivado" className="bg-burgos-dark">Archivado</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Notas internas</label>
+            <textarea value={form.notas_internas} onChange={(e) => setForm({ ...form, notas_internas: e.target.value })} rows={3} placeholder="Notas privadas sobre el caso..." className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm resize-none" />
+          </div>
+          <button type="submit" disabled={loading} className="w-full bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black py-3 rounded-xl font-semibold transition-all duration-300">
+            {loading ? "Creando..." : "Crear Expediente"}
+          </button>
+        </form>
       </motion.div>
     </div>
   );
