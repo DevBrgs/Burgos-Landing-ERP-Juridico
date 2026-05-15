@@ -122,12 +122,28 @@ async function handleChatPrivado(message: string, abogadoId: string) {
     .eq("id", abogadoId)
     .single();
 
-  // TODO: Cuando implementemos pgvector, buscar chunks relevantes aquí
-  // Por ahora, usamos solo el contexto del perfil del abogado
+  // RAG: Buscar chunks relevantes en los documentos del abogado
+  let contextoDocumentos = "";
+  try {
+    const palabrasClave = message.toLowerCase().split(" ").filter(p => p.length > 3).slice(0, 5);
+    if (palabrasClave.length > 0) {
+      const { data: chunks } = await supabase
+        .from("chunks_ia")
+        .select("contenido")
+        .eq("abogado_id", abogadoId)
+        .textSearch("contenido", palabrasClave.join(" | "))
+        .limit(3);
+
+      if (chunks && chunks.length > 0) {
+        contextoDocumentos = "\n\nCONTEXTO DE TUS DOCUMENTOS:\n" + chunks.map(c => c.contenido).join("\n---\n");
+      }
+    }
+  } catch {}
 
   const systemPrompt = `Sos un asistente jurídico del ERP de Burgos & Asociados. Trabajás con ${abogado?.nombre || "un abogado"}.
 Especialidad: ${abogado?.especialidad || "General"}.
 Áreas: ${abogado?.areas?.join(", ") || "Varias"}.
+${contextoDocumentos}
 
 REGLAS ESTRICTAS:
 - Respondé SOLO consultas relacionadas con el trabajo jurídico: análisis de casos, redacción de escritos, plazos, normativa, jurisprudencia, estrategia procesal.
@@ -135,6 +151,7 @@ REGLAS ESTRICTAS:
 - Sé directo y conciso. Dá la respuesta justa, sin rodeos.
 - Usá terminología jurídica argentina (CPCCN, CCC, LCT, CP, etc.).
 - Citá artículos y normativa cuando sea relevante.
+- Si tenés contexto de documentos del abogado, usalo para fundamentar tu respuesta.
 - Si no tenés información suficiente para responder, pedí los datos específicos que necesitás.
 - Si la consulta no es jurídica ni relacionada al ERP, respondé: "Solo puedo asistirte con consultas jurídicas y del ERP."
 - Tono: profesional, directo, sin formalidades innecesarias.`;

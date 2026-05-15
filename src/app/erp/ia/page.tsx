@@ -84,12 +84,22 @@ export default function IAPage() {
 
   const handleDocUpload = async (url: string, fileName: string) => {
     if (!abogadoId) return;
-    await supabase.from("documentos_ia").insert({
+    const { data } = await supabase.from("documentos_ia").insert({
       abogado_id: abogadoId,
       nombre: fileName,
       tipo: fileName.split(".").pop() || null,
       url,
-    });
+    }).select("id").single();
+
+    // Procesar automáticamente
+    if (data) {
+      fetch("/api/ia-docs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentoId: data.id, abogadoId }),
+      });
+    }
+
     const { data: docs } = await supabase.from("documentos_ia").select("*").eq("abogado_id", abogadoId).order("creado_en", { ascending: false });
     if (docs) setDocumentos(docs);
   };
