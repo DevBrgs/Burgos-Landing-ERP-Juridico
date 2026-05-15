@@ -94,7 +94,7 @@ test.describe("ERP - Equipo", () => {
   test("botón nuevo abogado abre modal", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/erp/abogados");
-    await page.click("text=Nuevo Abogado");
+    await page.click("text=Nuevo Miembro");
     await expect(page.locator("text=Nombre completo")).toBeVisible();
   });
 });

@@ -6,23 +6,15 @@
 
 # Test info
 
-- Name: erp.spec.ts >> ERP - Dashboard >> muestra stats cards
-- Location: e2e\erp.spec.ts:18:7
+- Name: erp.spec.ts >> ERP - Equipo >> botón nuevo abogado abre modal
+- Location: e2e\erp.spec.ts:94:7
 
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
-
-Locator: locator('text=Tareas pendientes')
-Expected: visible
-Error: strict mode violation: locator('text=Tareas pendientes') resolved to 2 elements:
-    1) <p class="text-xs text-burgos-gray-400 mt-0.5">Tareas pendientes</p> aka getByText('Tareas pendientes', { exact: true })
-    2) <p class="text-burgos-gray-600 text-sm py-4 text-center">Sin tareas pendientes</p> aka getByText('Sin tareas pendientes')
-
+TimeoutError: page.click: Timeout 10000ms exceeded.
 Call log:
-  - Expect "toBeVisible" with timeout 5000ms
-  - waiting for locator('text=Tareas pendientes')
+  - waiting for locator('text=Nuevo Abogado')
 
 ```
 
@@ -30,134 +22,152 @@ Call log:
 
 ```yaml
 - generic [active] [ref=e1]:
-  - alert [ref=e2]: ERP | Burgos & Asociados
-  - generic [ref=e3]:
-    - complementary [ref=e4]:
-      - generic [ref=e5]:
-        - link "Burgos BurgosERP" [ref=e7] [cursor=pointer]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - link "Burgos BurgosERP" [ref=e6] [cursor=pointer]:
           - /url: /erp
-          - img "Burgos" [ref=e8]
-          - generic [ref=e9]: BurgosERP
-        - navigation [ref=e10]:
-          - link "Dashboard" [ref=e11] [cursor=pointer]:
+          - img "Burgos" [ref=e7]
+          - generic [ref=e8]: BurgosERP
+        - navigation [ref=e9]:
+          - link "Dashboard" [ref=e10] [cursor=pointer]:
             - /url: /erp
-            - img [ref=e12]
+            - img [ref=e11]
             - text: Dashboard
-          - link "Métricas" [ref=e17] [cursor=pointer]:
+          - link "Métricas" [ref=e16] [cursor=pointer]:
             - /url: /erp/dashboard-director
-            - img [ref=e18]
+            - img [ref=e17]
             - text: Métricas
-          - link "Expedientes" [ref=e20] [cursor=pointer]:
+          - link "Expedientes" [ref=e19] [cursor=pointer]:
             - /url: /erp/expedientes
-            - img [ref=e21]
+            - img [ref=e20]
             - text: Expedientes
-          - link "Turnos" [ref=e23] [cursor=pointer]:
+          - link "Turnos" [ref=e22] [cursor=pointer]:
             - /url: /erp/turnos
-            - img [ref=e24]
+            - img [ref=e23]
             - text: Turnos
-          - link "Tareas" [ref=e26] [cursor=pointer]:
+          - link "Tareas" [ref=e25] [cursor=pointer]:
             - /url: /erp/tareas
-            - img [ref=e27]
+            - img [ref=e26]
             - text: Tareas
-          - link "Audiencias" [ref=e30] [cursor=pointer]:
+          - link "Audiencias" [ref=e29] [cursor=pointer]:
             - /url: /erp/audiencias
-            - img [ref=e31]
+            - img [ref=e30]
             - text: Audiencias
-          - link "Honorarios" [ref=e37] [cursor=pointer]:
+          - link "Honorarios" [ref=e36] [cursor=pointer]:
             - /url: /erp/honorarios
-            - img [ref=e38]
+            - img [ref=e37]
             - text: Honorarios
-          - link "Mensajes" [ref=e40] [cursor=pointer]:
+          - link "Mensajes" [ref=e39] [cursor=pointer]:
             - /url: /erp/mensajes
-            - img [ref=e41]
+            - img [ref=e40]
             - text: Mensajes
-          - link "Asistente IA" [ref=e43] [cursor=pointer]:
+          - link "Asistente IA" [ref=e42] [cursor=pointer]:
             - /url: /erp/ia
-            - img [ref=e44]
+            - img [ref=e43]
             - text: Asistente IA
-          - link "Escritos" [ref=e47] [cursor=pointer]:
+          - link "Escritos" [ref=e46] [cursor=pointer]:
             - /url: /erp/escritos
-            - img [ref=e48]
+            - img [ref=e47]
             - text: Escritos
-          - link "Jurisprudencia" [ref=e52] [cursor=pointer]:
+          - link "Jurisprudencia" [ref=e51] [cursor=pointer]:
             - /url: /erp/jurisprudencia
-            - img [ref=e53]
+            - img [ref=e52]
             - text: Jurisprudencia
-          - link "Newsletter" [ref=e55] [cursor=pointer]:
+          - link "Newsletter" [ref=e54] [cursor=pointer]:
             - /url: /erp/newsletter
-            - img [ref=e56]
+            - img [ref=e55]
             - text: Newsletter
-          - link "Clientes" [ref=e59] [cursor=pointer]:
+          - link "Clientes" [ref=e58] [cursor=pointer]:
             - /url: /erp/clientes
-            - img [ref=e60]
+            - img [ref=e59]
             - text: Clientes
-          - link "Equipo" [ref=e65] [cursor=pointer]:
+          - link "Equipo" [ref=e64] [cursor=pointer]:
             - /url: /erp/abogados
-            - img [ref=e66]
+            - img [ref=e65]
             - text: Equipo
-          - link "Mi Perfil" [ref=e69] [cursor=pointer]:
+          - link "Mi Perfil" [ref=e68] [cursor=pointer]:
             - /url: /erp/perfil
-            - img [ref=e70]
+            - img [ref=e69]
             - text: Mi Perfil
-          - link "Configuración" [ref=e82] [cursor=pointer]:
-            - /url: /erp/configuracion
-            - img [ref=e83]
-            - text: Configuración
-          - link "Manual" [ref=e86] [cursor=pointer]:
-            - /url: /erp/manual
+          - link "Estudios" [ref=e81] [cursor=pointer]:
+            - /url: /erp/estudios
+            - img [ref=e82]
+            - text: Estudios
+          - link "Actividad" [ref=e86] [cursor=pointer]:
+            - /url: /erp/actividad
             - img [ref=e87]
+            - text: Actividad
+          - link "Configuración" [ref=e89] [cursor=pointer]:
+            - /url: /erp/configuracion
+            - img [ref=e90]
+            - text: Configuración
+          - link "Manual" [ref=e93] [cursor=pointer]:
+            - /url: /erp/manual
+            - img [ref=e94]
             - text: Manual
-        - button "Cerrar sesión" [ref=e91]:
-          - img [ref=e92]
-          - text: Cerrar sesión
-    - generic [ref=e95]:
-      - banner [ref=e96]:
-        - generic [ref=e98]:
+        - button "Cerrar sesión" [ref=e98]:
           - img [ref=e99]
-          - textbox "Buscar expedientes, clientes..." [ref=e102]
-        - generic [ref=e103]:
-          - button "Modo claro" [ref=e104]:
-            - img [ref=e105]
-          - button [ref=e111]:
+          - text: Cerrar sesión
+    - generic [ref=e102]:
+      - banner [ref=e103]:
+        - generic [ref=e105]:
+          - img [ref=e106]
+          - textbox "Buscar expedientes, clientes..." [ref=e109]
+        - generic [ref=e110]:
+          - button "Modo claro" [ref=e111]:
             - img [ref=e112]
-          - generic [ref=e115]:
-            - img [ref=e117]
-            - generic [ref=e120]:
-              - paragraph [ref=e121]: ...
-              - paragraph
-      - main [ref=e122]:
-        - generic [ref=e123]:
-          - generic [ref=e124]:
-            - heading "Dashboard" [level=1] [ref=e125]
-            - paragraph [ref=e126]: Resumen general del estudio
-          - generic [ref=e127]:
-            - generic [ref=e128]:
-              - img [ref=e130]
-              - paragraph [ref=e132]: "2"
-              - paragraph [ref=e133]: Expedientes activos
-            - generic [ref=e134]:
-              - img [ref=e136]
-              - paragraph [ref=e138]: "0"
-              - paragraph [ref=e139]: Turnos hoy
-            - generic [ref=e140]:
+          - button [ref=e118]:
+            - img [ref=e119]
+          - generic [ref=e122]:
+            - img [ref=e124]
+            - generic [ref=e127]:
+              - paragraph [ref=e128]: Brandon Nievas
+              - paragraph [ref=e129]: director
+      - main [ref=e130]:
+        - generic [ref=e131]:
+          - generic [ref=e132]:
+            - generic [ref=e133]:
+              - heading "Equipo" [level=1] [ref=e134]:
+                - img [ref=e135]
+                - text: Equipo
+              - paragraph [ref=e140]: Gestión de abogados del estudio
+            - button "Nuevo Miembro" [ref=e141]:
               - img [ref=e142]
-              - paragraph [ref=e145]: "0"
-              - paragraph [ref=e146]: Tareas pendientes
-            - generic [ref=e147]:
-              - img [ref=e149]
-              - paragraph [ref=e154]: "0"
-              - paragraph [ref=e155]: Clientes activos
-          - generic [ref=e156]:
-            - generic [ref=e157]:
-              - heading "Próximas Audiencias" [level=2] [ref=e158]:
-                - img [ref=e159]
-                - text: Próximas Audiencias
-              - paragraph [ref=e165]: Sin audiencias próximas
-            - generic [ref=e166]:
-              - heading "Tareas Próximas" [level=2] [ref=e167]:
-                - img [ref=e168]
-                - text: Tareas Próximas
-              - paragraph [ref=e170]: Sin tareas pendientes
+              - text: Nuevo Miembro
+          - generic [ref=e146]:
+            - img [ref=e147]
+            - textbox "Buscar por nombre o email..." [ref=e150]
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - generic [ref=e153]:
+                - generic [ref=e155]: a
+                - generic [ref=e157]: Activo
+              - heading "administrativo" [level=3] [ref=e158]
+              - paragraph [ref=e159]: asd
+              - paragraph [ref=e160]: empleado@test.com
+              - button "Desactivar" [ref=e162]
+            - generic [ref=e163]:
+              - generic [ref=e164]:
+                - generic [ref=e166]: t
+                - generic [ref=e168]: Activo
+              - heading "test" [level=3] [ref=e169]
+              - paragraph [ref=e170]: asdas
+              - paragraph [ref=e171]: test@test.com
+              - paragraph [ref=e172]: "1231312"
+              - button "Desactivar" [ref=e174]
+            - generic [ref=e175]:
+              - generic [ref=e176]:
+                - generic [ref=e178]: BN
+                - generic [ref=e179]:
+                  - img [ref=e180]
+                  - generic [ref=e182]: Activo
+              - heading "Brandon Nievas" [level=3] [ref=e183]
+              - paragraph [ref=e184]: IT
+              - paragraph [ref=e185]: admin@burgos.com.ar
+              - paragraph [ref=e186]: CPACF T� XX F� XXX
+              - button "Desactivar" [ref=e188]
+  - alert [ref=e189]
 ```
 
 # Test source
@@ -184,8 +194,7 @@ Call log:
   19  |     await loginAsAdmin(page);
   20  |     await expect(page.locator("text=Expedientes activos")).toBeVisible();
   21  |     await expect(page.locator("text=Turnos hoy")).toBeVisible();
-> 22  |     await expect(page.locator("text=Tareas pendientes")).toBeVisible();
-      |                                                          ^ Error: expect(locator).toBeVisible() failed
+  22  |     await expect(page.getByText("Tareas pendientes", { exact: true })).toBeVisible();
   23  |   });
   24  | });
   25  | 
@@ -217,9 +226,9 @@ Call log:
   51  |     await loginAsAdmin(page);
   52  |     await page.goto("/erp/tareas");
   53  |     await expect(page.locator("h1")).toContainText("Tareas");
-  54  |     await expect(page.locator("text=Pendientes")).toBeVisible();
-  55  |     await expect(page.locator("text=En curso")).toBeVisible();
-  56  |     await expect(page.locator("text=Completadas")).toBeVisible();
+  54  |     await expect(page.getByRole("heading", { name: /Pendientes/ })).toBeVisible();
+  55  |     await expect(page.getByRole("heading", { name: /En curso/ })).toBeVisible();
+  56  |     await expect(page.getByRole("heading", { name: /Completadas/ })).toBeVisible();
   57  |   });
   58  | });
   59  | 
@@ -260,7 +269,8 @@ Call log:
   94  |   test("botón nuevo abogado abre modal", async ({ page }) => {
   95  |     await loginAsAdmin(page);
   96  |     await page.goto("/erp/abogados");
-  97  |     await page.click("text=Nuevo Abogado");
+> 97  |     await page.click("text=Nuevo Abogado");
+      |                ^ TimeoutError: page.click: Timeout 10000ms exceeded.
   98  |     await expect(page.locator("text=Nombre completo")).toBeVisible();
   99  |   });
   100 | });

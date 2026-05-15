@@ -6,23 +6,15 @@
 
 # Test info
 
-- Name: erp.spec.ts >> ERP - Tareas >> página de tareas carga con kanban
-- Location: e2e\erp.spec.ts:50:7
+- Name: erp.spec.ts >> ERP - Equipo >> botón nuevo abogado abre modal
+- Location: e2e\erp.spec.ts:94:7
 
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
-
-Locator: locator('text=Pendientes')
-Expected: visible
-Error: strict mode violation: locator('text=Pendientes') resolved to 2 elements:
-    1) <p class="text-burgos-gray-400 text-sm mt-1">…</p> aka getByText('0 pendientes')
-    2) <h3 class="text-xs font-semibold text-burgos-gray-400 uppercase tracking-wider">…</h3> aka getByRole('heading', { name: 'Pendientes (0)' })
-
+TimeoutError: page.click: Timeout 10000ms exceeded.
 Call log:
-  - Expect "toBeVisible" with timeout 5000ms
-  - waiting for locator('text=Pendientes')
+  - waiting for locator('text=Nuevo Abogado')
 
 ```
 
@@ -98,53 +90,84 @@ Call log:
             - /url: /erp/perfil
             - img [ref=e69]
             - text: Mi Perfil
-          - link "Configuración" [ref=e81] [cursor=pointer]:
-            - /url: /erp/configuracion
+          - link "Estudios" [ref=e81] [cursor=pointer]:
+            - /url: /erp/estudios
             - img [ref=e82]
+            - text: Estudios
+          - link "Actividad" [ref=e86] [cursor=pointer]:
+            - /url: /erp/actividad
+            - img [ref=e87]
+            - text: Actividad
+          - link "Configuración" [ref=e89] [cursor=pointer]:
+            - /url: /erp/configuracion
+            - img [ref=e90]
             - text: Configuración
-          - link "Manual" [ref=e85] [cursor=pointer]:
+          - link "Manual" [ref=e93] [cursor=pointer]:
             - /url: /erp/manual
-            - img [ref=e86]
+            - img [ref=e94]
             - text: Manual
-        - button "Cerrar sesión" [ref=e90]:
-          - img [ref=e91]
+        - button "Cerrar sesión" [ref=e98]:
+          - img [ref=e99]
           - text: Cerrar sesión
-    - generic [ref=e94]:
-      - banner [ref=e95]:
-        - generic [ref=e97]:
-          - img [ref=e98]
-          - textbox "Buscar expedientes, clientes..." [ref=e101]
-        - generic [ref=e102]:
-          - button "Modo claro" [ref=e103]:
-            - img [ref=e104]
-          - button [ref=e110]:
-            - img [ref=e111]
-          - generic [ref=e114]:
-            - img [ref=e116]
-            - generic [ref=e119]:
-              - paragraph [ref=e120]: ...
-              - paragraph
-      - main [ref=e121]:
-        - generic [ref=e122]:
-          - generic [ref=e123]:
-            - generic [ref=e124]:
-              - heading "Tareas" [level=1] [ref=e125]:
-                - img [ref=e126]
-                - text: Tareas
-              - paragraph [ref=e129]: 0 pendientes
-            - button "Nueva Tarea" [ref=e130]:
-              - img [ref=e131]
-              - text: Nueva Tarea
+    - generic [ref=e102]:
+      - banner [ref=e103]:
+        - generic [ref=e105]:
+          - img [ref=e106]
+          - textbox "Buscar expedientes, clientes..." [ref=e109]
+        - generic [ref=e110]:
+          - button "Modo claro" [ref=e111]:
+            - img [ref=e112]
+          - button [ref=e118]:
+            - img [ref=e119]
+          - generic [ref=e122]:
+            - img [ref=e124]
+            - generic [ref=e127]:
+              - paragraph [ref=e128]: Brandon Nievas
+              - paragraph [ref=e129]: director
+      - main [ref=e130]:
+        - generic [ref=e131]:
           - generic [ref=e132]:
-            - button "Todas" [ref=e133]
-            - button "Pendiente" [ref=e134]
-            - button "En curso" [ref=e135]
-            - button "Completada" [ref=e136]
-          - generic [ref=e137]:
-            - heading "Pendientes (0)" [level=3] [ref=e141]
-            - heading "En curso (0)" [level=3] [ref=e145]
-            - heading "Completadas (0)" [level=3] [ref=e149]
-  - alert [ref=e152]
+            - generic [ref=e133]:
+              - heading "Equipo" [level=1] [ref=e134]:
+                - img [ref=e135]
+                - text: Equipo
+              - paragraph [ref=e140]: Gestión de abogados del estudio
+            - button "Nuevo Miembro" [ref=e141]:
+              - img [ref=e142]
+              - text: Nuevo Miembro
+          - generic [ref=e146]:
+            - img [ref=e147]
+            - textbox "Buscar por nombre o email..." [ref=e150]
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - generic [ref=e153]:
+                - generic [ref=e155]: a
+                - generic [ref=e157]: Activo
+              - heading "administrativo" [level=3] [ref=e158]
+              - paragraph [ref=e159]: asd
+              - paragraph [ref=e160]: empleado@test.com
+              - button "Desactivar" [ref=e162]
+            - generic [ref=e163]:
+              - generic [ref=e164]:
+                - generic [ref=e166]: t
+                - generic [ref=e168]: Activo
+              - heading "test" [level=3] [ref=e169]
+              - paragraph [ref=e170]: asdas
+              - paragraph [ref=e171]: test@test.com
+              - paragraph [ref=e172]: "1231312"
+              - button "Desactivar" [ref=e174]
+            - generic [ref=e175]:
+              - generic [ref=e176]:
+                - generic [ref=e178]: BN
+                - generic [ref=e179]:
+                  - img [ref=e180]
+                  - generic [ref=e182]: Activo
+              - heading "Brandon Nievas" [level=3] [ref=e183]
+              - paragraph [ref=e184]: IT
+              - paragraph [ref=e185]: admin@burgos.com.ar
+              - paragraph [ref=e186]: CPACF T� XX F� XXX
+              - button "Desactivar" [ref=e188]
+  - alert [ref=e189]
 ```
 
 # Test source
@@ -171,7 +194,7 @@ Call log:
   19  |     await loginAsAdmin(page);
   20  |     await expect(page.locator("text=Expedientes activos")).toBeVisible();
   21  |     await expect(page.locator("text=Turnos hoy")).toBeVisible();
-  22  |     await expect(page.locator("text=Tareas pendientes")).toBeVisible();
+  22  |     await expect(page.getByText("Tareas pendientes", { exact: true })).toBeVisible();
   23  |   });
   24  | });
   25  | 
@@ -203,10 +226,9 @@ Call log:
   51  |     await loginAsAdmin(page);
   52  |     await page.goto("/erp/tareas");
   53  |     await expect(page.locator("h1")).toContainText("Tareas");
-> 54  |     await expect(page.locator("text=Pendientes")).toBeVisible();
-      |                                                   ^ Error: expect(locator).toBeVisible() failed
-  55  |     await expect(page.locator("text=En curso")).toBeVisible();
-  56  |     await expect(page.locator("text=Completadas")).toBeVisible();
+  54  |     await expect(page.getByRole("heading", { name: /Pendientes/ })).toBeVisible();
+  55  |     await expect(page.getByRole("heading", { name: /En curso/ })).toBeVisible();
+  56  |     await expect(page.getByRole("heading", { name: /Completadas/ })).toBeVisible();
   57  |   });
   58  | });
   59  | 
@@ -247,7 +269,8 @@ Call log:
   94  |   test("botón nuevo abogado abre modal", async ({ page }) => {
   95  |     await loginAsAdmin(page);
   96  |     await page.goto("/erp/abogados");
-  97  |     await page.click("text=Nuevo Abogado");
+> 97  |     await page.click("text=Nuevo Abogado");
+      |                ^ TimeoutError: page.click: Timeout 10000ms exceeded.
   98  |     await expect(page.locator("text=Nombre completo")).toBeVisible();
   99  |   });
   100 | });
