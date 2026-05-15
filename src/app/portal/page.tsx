@@ -136,6 +136,7 @@ function CambiarClave({ clienteId, onDone }: { clienteId: string; onDone: () => 
 
 function PortalDashboard({ session, onLogout }: { session: ClienteSession; onLogout: () => void }) {
   const [expedientes, setExpedientes] = useState<any[]>([]);
+  const [tab, setTab] = useState<"expedientes" | "turnos" | "mensajes">("expedientes");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -166,35 +167,65 @@ function PortalDashboard({ session, onLogout }: { session: ClienteSession; onLog
         </div>
       </header>
 
-      {/* Content */}
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-        <h1 className="text-xl font-bold text-burgos-white">Mis Expedientes</h1>
+      {/* Tabs */}
+      <div className="max-w-5xl mx-auto px-4 pt-6">
+        <div className="flex gap-2 mb-6">
+          {[
+            { id: "expedientes" as const, label: "Mis Expedientes" },
+            { id: "turnos" as const, label: "Turnos" },
+            { id: "mensajes" as const, label: "Mensajes" },
+          ].map((t) => (
+            <button key={t.id} onClick={() => setTab(t.id)} className={`px-4 py-2 rounded-xl text-xs font-medium transition-all border ${tab === t.id ? "bg-burgos-gold/10 text-burgos-gold border-burgos-gold/30" : "text-burgos-gray-400 border-burgos-gray-800 hover:border-burgos-gray-600"}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        {loading ? (
-          <div className="text-center py-12"><div className="w-8 h-8 border-2 border-burgos-gold/30 border-t-burgos-gold rounded-full animate-spin mx-auto" /></div>
-        ) : expedientes.length === 0 ? (
-          <div className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-8 text-center">
-            <Scale size={40} className="text-burgos-gray-800 mx-auto mb-3" />
-            <p className="text-burgos-gray-600 text-sm">No tenés expedientes asignados todavía.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {expedientes.map((exp: any) => (
-              <div key={exp.id} className="bg-burgos-dark rounded-xl border border-burgos-gray-800 hover:border-burgos-gold/20 p-5 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-burgos-white">{exp.caratula}</h3>
-                    <div className="flex items-center gap-3 mt-1">
-                      {exp.numero && <span className="text-[10px] text-burgos-gray-400 font-mono">N° {exp.numero}</span>}
-                      {exp.fuero && <span className="text-[10px] text-burgos-gray-600">{exp.fuero}</span>}
+      {/* Content */}
+      <div className="max-w-5xl mx-auto px-4 pb-8">
+        {tab === "expedientes" && (
+          <>
+            {loading ? (
+              <div className="text-center py-12"><div className="w-8 h-8 border-2 border-burgos-gold/30 border-t-burgos-gold rounded-full animate-spin mx-auto" /></div>
+            ) : expedientes.length === 0 ? (
+              <div className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-8 text-center">
+                <Scale size={40} className="text-burgos-gray-800 mx-auto mb-3" />
+                <p className="text-burgos-gray-600 text-sm">No tenés expedientes asignados todavía.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {expedientes.map((exp: any) => (
+                  <div key={exp.id} className="bg-burgos-dark rounded-xl border border-burgos-gray-800 hover:border-burgos-gold/20 p-5 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-burgos-white">{exp.caratula}</h3>
+                        <div className="flex items-center gap-3 mt-1">
+                          {exp.numero && <span className="text-[10px] text-burgos-gray-400 font-mono">N° {exp.numero}</span>}
+                          {exp.fuero && <span className="text-[10px] text-burgos-gray-600">{exp.fuero}</span>}
+                        </div>
+                      </div>
+                      <span className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full ${exp.estado === "activo" ? "bg-green-500/10 text-green-400" : "bg-amber-500/10 text-amber-400"}`}>
+                        {exp.estado}
+                      </span>
                     </div>
                   </div>
-                  <span className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full ${exp.estado === "activo" ? "bg-green-500/10 text-green-400" : "bg-amber-500/10 text-amber-400"}`}>
-                    {exp.estado}
-                  </span>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
+          </>
+        )}
+
+        {tab === "turnos" && (
+          <div className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-8 text-center">
+            <p className="text-burgos-gray-400 text-sm">Para solicitar un turno, usá el chat de la página principal o contactá a tu abogado.</p>
+            <a href="/#contacto" className="inline-block mt-3 text-sm text-burgos-gold hover:text-burgos-gold-light font-medium">Ir a contacto →</a>
+          </div>
+        )}
+
+        {tab === "mensajes" && (
+          <div className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-8 text-center">
+            <p className="text-burgos-gray-400 text-sm">La mensajería con tu abogado estará disponible próximamente.</p>
           </div>
         )}
       </div>

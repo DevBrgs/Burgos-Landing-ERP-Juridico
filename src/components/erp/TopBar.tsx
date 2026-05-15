@@ -37,7 +37,10 @@ export function TopBar() {
   };
 
   return (
-    <header className="h-14 border-b border-burgos-gray-800 bg-burgos-dark/80 backdrop-blur-lg flex items-center justify-end px-4 sm:px-6 lg:px-8 sticky top-0 z-30">
+    <header className="h-14 border-b border-burgos-gray-800 bg-burgos-dark/80 backdrop-blur-lg flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-30">
+      {/* Spacer for hamburger on mobile */}
+      <div className="w-10 lg:hidden flex-shrink-0" />
+
       {/* Search - desktop only */}
       <div className="flex-1 max-w-md hidden lg:block">
         <div className="relative">

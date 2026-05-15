@@ -145,10 +145,10 @@ export function Sidebar() {
       {/* Mobile toggle */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 bg-burgos-dark-2 border border-burgos-gray-800 rounded-xl flex items-center justify-center text-burgos-gray-400"
+        className="lg:hidden fixed top-[1.1rem] left-4 z-[35] w-9 h-9 bg-burgos-dark-2 border border-burgos-gray-800 rounded-xl flex items-center justify-center text-burgos-gray-400"
         aria-label="Abrir menú"
       >
-        <Menu size={20} />
+        <Menu size={18} />
       </button>
 
       {/* Mobile sidebar */}
