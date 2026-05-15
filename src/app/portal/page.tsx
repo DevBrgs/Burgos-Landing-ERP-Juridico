@@ -20,17 +20,34 @@ export default function PortalPage() {
   useEffect(() => {
     const saved = localStorage.getItem("portal-session");
     if (saved) {
-      try { setSession(JSON.parse(saved)); } catch {}
+      try { setSession(JSON.parse(saved)); } catch { /* invalid session, ignore */ }
     }
     setLoading(false);
   }, []);
 
+  const handleLogin = (s: ClienteSession) => {
+    setSession(s);
+    localStorage.setItem("portal-session", JSON.stringify(s));
+  };
+
+  const handleLogout = () => {
+    setSession(null);
+    localStorage.removeItem("portal-session");
+    localStorage.removeItem("portal-token");
+  };
+
+  const handleClaveChanged = () => {
+    const updated = { ...session!, primer_ingreso: false };
+    setSession(updated);
+    localStorage.setItem("portal-session", JSON.stringify(updated));
+  };
+
   if (loading) return null;
 
-  if (!session) return <PortalLogin onLogin={(s) => { setSession(s); localStorage.setItem("portal-session", JSON.stringify(s)); }} />;
-  if (session.primer_ingreso) return <CambiarClave clienteId={session.id} onDone={() => { setSession({ ...session, primer_ingreso: false }); localStorage.setItem("portal-session", JSON.stringify({ ...session, primer_ingreso: false })); }} />;
+  if (!session) return <PortalLogin onLogin={handleLogin} />;
+  if (session.primer_ingreso) return <CambiarClave clienteId={session.id} onDone={handleClaveChanged} />;
 
-  return <PortalDashboard session={session} onLogout={() => { setSession(null); localStorage.removeItem("portal-session"); }} />;
+  return <PortalDashboard session={session} onLogout={handleLogout} />;
 }
 
 function PortalLogin({ onLogin }: { onLogin: (s: ClienteSession) => void }) {
@@ -42,20 +59,25 @@ function PortalLogin({ onLogin }: { onLogin: (s: ClienteSession) => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return; // Prevent double submit
     setError("");
     setLoading(true);
 
-    const res = await fetch("/api/portal", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dni, clave }),
-    });
+    try {
+      const res = await fetch("/api/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dni: dni.trim(), clave }),
+      });
 
-    const data = await res.json();
-    if (!res.ok) { setError(data.error); setLoading(false); return; }
+      const data = await res.json();
+      if (!res.ok) { setError(data.error); setLoading(false); return; }
 
-    localStorage.setItem("portal-token", data.token);
-    onLogin(data.cliente);
+      localStorage.setItem("portal-token", data.token);
+      onLogin(data.cliente);
+    } catch {
+      setError("Error de conexión. Intentá de nuevo.");
+    }
     setLoading(false);
   };
 
@@ -140,13 +162,17 @@ function PortalDashboard({ session, onLogout }: { session: ClienteSession; onLog
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
-      const res = await window.fetch(`/api/portal/expedientes?clienteId=${session.id}`);
-      const data = await res.json();
-      if (Array.isArray(data)) setExpedientes(data);
+    const loadExpedientes = async () => {
+      try {
+        const res = await window.fetch(`/api/portal/expedientes?clienteId=${session.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) setExpedientes(data);
+        }
+      } catch { /* network error, ignore */ }
       setLoading(false);
     };
-    fetch();
+    loadExpedientes();
   }, [session.id]);
 
   return (

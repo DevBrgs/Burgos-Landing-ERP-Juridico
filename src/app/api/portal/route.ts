@@ -19,19 +19,23 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabase();
 
+    // First check if client exists
     const { data: cliente, error } = await supabase
       .from("clientes")
       .select("id, dni, nombre, clave_hash, activo, primer_ingreso, abogado_id")
-      .eq("dni", dni)
-      .eq("activo", true)
+      .eq("dni", dni.trim())
       .single();
 
     if (error || !cliente) {
-      return NextResponse.json({ error: "DNI no encontrado o cuenta inactiva" }, { status: 401 });
+      return NextResponse.json({ error: "DNI no encontrado" }, { status: 401 });
     }
 
-    // Verificar clave (en producción usar bcrypt)
-    if (cliente.clave_hash !== clave) {
+    if (!cliente.activo) {
+      return NextResponse.json({ error: "Cuenta inactiva. Contactá a tu abogado." }, { status: 401 });
+    }
+
+    // Exact string comparison for clave
+    if (String(cliente.clave_hash).trim() !== String(clave).trim()) {
       return NextResponse.json({ error: "Clave incorrecta" }, { status: 401 });
     }
 

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { CheckSquare, Plus, X, AlertTriangle, Clock, MessageSquare, Paperclip, Users, Tag, Send, Link2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 import { FileUpload } from "@/components/ui/FileUpload";
 
 interface Tarea {
@@ -178,9 +179,9 @@ function KanbanColumn({ title, count, color, tareas, onUpdate, onSelect, onToggl
                   )}
                   {/* Expediente link indicator */}
                   {tarea.expediente_id && (
-                    <span className="text-[10px] flex items-center gap-0.5 text-blue-400" title="Vinculada a expediente">
+                    <Link href={`/erp/expedientes/${tarea.expediente_id}`} onClick={(e) => e.stopPropagation()} className="text-[10px] flex items-center gap-0.5 text-blue-400 hover:text-blue-300 transition-colors" title="Ver expediente vinculado">
                       <Link2 size={10} />
-                    </span>
+                    </Link>
                   )}
                   {/* Comments toggle */}
                   <button onClick={(e) => { e.stopPropagation(); setExpandedComments(showComments ? null : tarea.id); }} className="text-[10px] flex items-center gap-0.5 text-burgos-gray-600 hover:text-burgos-gold transition-colors">

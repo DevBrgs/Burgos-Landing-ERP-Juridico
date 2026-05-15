@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Users, Plus, Search, X, Key, Copy, Check } from "lucide-react";
+import { Users, Plus, Search, X, Key, Copy, Check, Pencil, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Cliente {
@@ -21,6 +21,7 @@ export default function ClientesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showMasivoModal, setShowMasivoModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState<Cliente | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const supabase = createClient();
 
@@ -36,6 +37,12 @@ export default function ClientesPage() {
   useEffect(() => {
     fetchClientes();
   }, []);
+
+  const handleDelete = async (cliente: Cliente) => {
+    if (!confirm(`¿Eliminar al cliente "${cliente.nombre}"? Esta acción no se puede deshacer.`)) return;
+    await supabase.from("clientes").delete().eq("id", cliente.id);
+    fetchClientes();
+  };
 
   const filtered = clientes.filter(
     (c) =>
@@ -106,6 +113,7 @@ export default function ClientesPage() {
                 <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium hidden sm:table-cell">Email</th>
                 <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium hidden md:table-cell">Teléfono</th>
                 <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium">Estado</th>
+                <th className="text-right px-5 py-3 text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -119,6 +127,24 @@ export default function ClientesPage() {
                     <span className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full ${cliente.activo ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"}`}>
                       {cliente.activo ? "Activo" : "Inactivo"}
                     </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setShowEditModal(cliente)}
+                        className="w-7 h-7 bg-burgos-dark-2 border border-burgos-gray-800 rounded-lg flex items-center justify-center text-burgos-gray-400 hover:text-burgos-gold hover:border-burgos-gold/30 transition-all"
+                        title="Editar"
+                      >
+                        <Pencil size={12} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(cliente)}
+                        className="w-7 h-7 bg-burgos-dark-2 border border-burgos-gray-800 rounded-lg flex items-center justify-center text-burgos-gray-400 hover:text-red-400 hover:border-red-500/30 transition-all"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -136,6 +162,10 @@ export default function ClientesPage() {
         <NuevoClienteModal onClose={() => setShowModal(false)} onSuccess={() => { setShowModal(false); fetchClientes(); }} />
       )}
 
+      {showEditModal && (
+        <EditarClienteModal cliente={showEditModal} onClose={() => setShowEditModal(null)} onSuccess={() => { setShowEditModal(null); fetchClientes(); }} />
+      )}
+
       {showMasivoModal && (
         <ClavesMasivasModal onClose={() => setShowMasivoModal(false)} onSuccess={() => { setShowMasivoModal(false); fetchClientes(); }} />
       )}
@@ -146,6 +176,7 @@ export default function ClientesPage() {
 function NuevoClienteModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [form, setForm] = useState({ nombre: "", dni: "", email: "", telefono: "" });
   const [clave, setClave] = useState("");
+  const [clavePersonalizada, setClavePersonalizada] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -170,6 +201,7 @@ function NuevoClienteModal({ onClose, onSuccess }: { onClose: () => void; onSucc
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!clave || clave.length < 4) { setError("La clave debe tener al menos 4 caracteres"); return; }
     setLoading(true);
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -182,7 +214,7 @@ function NuevoClienteModal({ onClose, onSuccess }: { onClose: () => void; onSucc
       dni: form.dni,
       email: form.email || null,
       telefono: form.telefono || null,
-      clave_hash: clave, // En producción usar bcrypt server-side
+      clave_hash: clave,
       abogado_id: abogado.id,
     });
 
@@ -203,7 +235,7 @@ function NuevoClienteModal({ onClose, onSuccess }: { onClose: () => void; onSucc
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 w-full max-w-md">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold text-burgos-white">Nuevo Cliente</h2>
           <button onClick={onClose} className="text-burgos-gray-600 hover:text-burgos-white"><X size={20} /></button>
@@ -233,23 +265,43 @@ function NuevoClienteModal({ onClose, onSuccess }: { onClose: () => void; onSucc
             </div>
           </div>
 
-          {/* Clave generada */}
+          {/* Clave section */}
           <div>
-            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block flex items-center gap-1">
-              <Key size={10} />
-              Clave de acceso al portal
-            </label>
-            <div className="flex gap-2">
-              <div className="flex-1 px-4 py-2.5 bg-burgos-black/50 border border-burgos-gold/20 rounded-xl text-burgos-gold font-mono text-sm">
-                {clave}
-              </div>
-              <button type="button" onClick={copiarClave} className="w-10 bg-burgos-dark-2 border border-burgos-gray-800 rounded-xl flex items-center justify-center text-burgos-gray-400 hover:text-burgos-gold transition-colors">
-                {copied ? <Check size={14} /> : <Copy size={14} />}
-              </button>
-              <button type="button" onClick={generarClave} className="px-3 bg-burgos-dark-2 border border-burgos-gray-800 rounded-xl text-[10px] text-burgos-gray-400 hover:text-burgos-gold transition-colors">
-                Nueva
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium flex items-center gap-1">
+                <Key size={10} />
+                Clave de acceso al portal
+              </label>
+              <button
+                type="button"
+                onClick={() => { setClavePersonalizada(!clavePersonalizada); if (clavePersonalizada) generarClave(); }}
+                className="text-[10px] text-burgos-gold hover:text-burgos-gold-light transition-colors"
+              >
+                {clavePersonalizada ? "Generar automática" : "Usar clave personalizada"}
               </button>
             </div>
+
+            {clavePersonalizada ? (
+              <input
+                type="text"
+                value={clave}
+                onChange={(e) => setClave(e.target.value)}
+                placeholder="Escribir clave personalizada..."
+                className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm font-mono"
+              />
+            ) : (
+              <div className="flex gap-2">
+                <div className="flex-1 px-4 py-2.5 bg-burgos-black/50 border border-burgos-gold/20 rounded-xl text-burgos-gold font-mono text-sm">
+                  {clave}
+                </div>
+                <button type="button" onClick={copiarClave} className="w-10 bg-burgos-dark-2 border border-burgos-gray-800 rounded-xl flex items-center justify-center text-burgos-gray-400 hover:text-burgos-gold transition-colors">
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                </button>
+                <button type="button" onClick={generarClave} className="px-3 bg-burgos-dark-2 border border-burgos-gray-800 rounded-xl text-[10px] text-burgos-gray-400 hover:text-burgos-gold transition-colors">
+                  Nueva
+                </button>
+              </div>
+            )}
             <p className="text-[10px] text-burgos-gray-600 mt-1">
               Compartí esta clave con el cliente. La usará para ingresar al portal.
             </p>
@@ -257,6 +309,117 @@ function NuevoClienteModal({ onClose, onSuccess }: { onClose: () => void; onSucc
 
           <button type="submit" disabled={loading} className="w-full bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black py-3 rounded-xl font-semibold transition-all duration-300">
             {loading ? "Creando..." : "Crear Cliente"}
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
+function EditarClienteModal({ cliente, onClose, onSuccess }: { cliente: Cliente; onClose: () => void; onSuccess: () => void }) {
+  const [form, setForm] = useState({ nombre: cliente.nombre, email: cliente.email || "", telefono: cliente.telefono || "" });
+  const [resetClave, setResetClave] = useState(false);
+  const [nuevaClave, setNuevaClave] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const supabase = createClient();
+
+  const generarClave = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    let result = "";
+    for (let i = 0; i < 8; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+    setNuevaClave(result);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const updates: Record<string, unknown> = {
+      nombre: form.nombre,
+      email: form.email || null,
+      telefono: form.telefono || null,
+    };
+
+    if (resetClave && nuevaClave) {
+      updates.clave_hash = nuevaClave;
+      updates.primer_ingreso = true;
+    }
+
+    const { error: updateError } = await supabase.from("clientes").update(updates).eq("id", cliente.id);
+
+    if (updateError) {
+      setError(updateError.message);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    onSuccess();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 w-full max-w-md">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-burgos-white">Editar Cliente</h2>
+          <button onClick={onClose} className="text-burgos-gray-600 hover:text-burgos-white"><X size={20} /></button>
+        </div>
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-xl mb-4">{error}</div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Nombre completo</label>
+            <input type="text" required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">DNI (no editable)</label>
+            <input type="text" disabled value={cliente.dni} className="w-full px-4 py-2.5 bg-burgos-black/30 border border-burgos-gray-800 rounded-xl text-burgos-gray-400 text-sm cursor-not-allowed" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Email</label>
+              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="opcional" className="w-full px-3 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Teléfono</label>
+              <input type="tel" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} placeholder="opcional" className="w-full px-3 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
+            </div>
+          </div>
+
+          {/* Reset clave */}
+          <div className="border border-burgos-gray-800 rounded-xl p-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={resetClave}
+                onChange={(e) => { setResetClave(e.target.checked); if (e.target.checked) generarClave(); }}
+                className="w-4 h-4 rounded border-burgos-gray-800 bg-burgos-black/50 text-burgos-gold focus:ring-burgos-gold/30"
+              />
+              <span className="text-xs text-burgos-gray-400">Resetear clave de acceso</span>
+            </label>
+            {resetClave && (
+              <div className="mt-3 flex gap-2">
+                <input
+                  type="text"
+                  value={nuevaClave}
+                  onChange={(e) => setNuevaClave(e.target.value)}
+                  className="flex-1 px-3 py-2 bg-burgos-black/50 border border-burgos-gold/20 rounded-lg text-burgos-gold font-mono text-sm focus:outline-none"
+                />
+                <button type="button" onClick={generarClave} className="px-3 bg-burgos-dark-2 border border-burgos-gray-800 rounded-lg text-[10px] text-burgos-gray-400 hover:text-burgos-gold transition-colors">
+                  Nueva
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button type="submit" disabled={loading} className="w-full bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black py-3 rounded-xl font-semibold transition-all duration-300">
+            {loading ? "Guardando..." : "Guardar Cambios"}
           </button>
         </form>
       </motion.div>
