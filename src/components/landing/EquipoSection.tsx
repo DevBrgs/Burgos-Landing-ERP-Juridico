@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useCallback } from "react";
-import { Calendar, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, ArrowRight, MessageCircle } from "lucide-react";
 import Link from "next/link";
 
 interface Abogado {
@@ -14,6 +14,7 @@ interface Abogado {
   bio: string | null;
   foto_url: string | null;
   fondo_url: string | null;
+  whatsapp: string | null;
 }
 
 const slideVariants = {
@@ -24,7 +25,7 @@ const slideVariants = {
 
 // Fallback data si la API no responde
 const fallbackAbogados: Abogado[] = [
-  { id: "1", nombre: "Cargando equipo...", especialidad: "", matricula: null, rol: "asociado", bio: null, foto_url: null, fondo_url: null },
+  { id: "1", nombre: "Cargando equipo...", especialidad: "", matricula: null, rol: "asociado", bio: null, foto_url: null, fondo_url: null, whatsapp: null },
 ];
 
 export function EquipoSection() {
@@ -108,10 +109,15 @@ export function EquipoSection() {
                     <p className="text-burgos-gold text-sm font-medium mb-1">{abogado.especialidad}</p>
                     {abogado.matricula && <p className="text-burgos-gray-600 text-xs mb-4">{abogado.matricula}</p>}
                     {abogado.bio && <p className="text-burgos-gray-400 text-sm leading-relaxed mb-6 line-clamp-3">{abogado.bio}</p>}
-                    <div className="flex gap-3 justify-center">
+                    <div className="flex gap-3 justify-center flex-wrap">
                       <a href="#contacto" className="inline-flex items-center gap-2 bg-burgos-gold/10 hover:bg-burgos-gold/20 text-burgos-gold border border-burgos-gold/30 px-5 py-2.5 rounded-full text-sm font-medium transition-all">
                         <Calendar size={14} /> Reservar turno
                       </a>
+                      {abogado.whatsapp && (
+                        <a href={`https://wa.me/${abogado.whatsapp}?text=Hola, me contacto desde la web de Burgos %26 Asociados`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 px-4 py-2.5 rounded-full text-sm font-medium transition-all">
+                          <MessageCircle size={14} /> WhatsApp
+                        </a>
+                      )}
                       <Link href={`/equipo/${abogado.id}`} className="inline-flex items-center gap-1 text-burgos-gray-400 hover:text-burgos-gold text-sm font-medium transition-colors px-4 py-2.5">
                         Ver perfil <ArrowRight size={14} />
                       </Link>

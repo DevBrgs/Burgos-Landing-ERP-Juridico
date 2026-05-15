@@ -23,6 +23,7 @@ import {
   BarChart3,
   MessageSquare,
   FilePen,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +42,7 @@ const navItems = [
   { href: "/erp/clientes", label: "Clientes", icon: Users },
   { href: "/erp/abogados", label: "Equipo", icon: UserPlus },
   { href: "/erp/perfil", label: "Mi Perfil", icon: UserCog },
+  { href: "/erp/estudios", label: "Estudios", icon: Building2 },
   { href: "/erp/configuracion", label: "Configuración", icon: Settings },
 ];
 
@@ -62,7 +64,10 @@ export function Sidebar() {
   }, []);
 
   // Filtrar items según rol
-  const visibleItems = navItems.filter(() => true); // Todos ven todo ahora
+  const visibleItems = navItems.filter((item) => {
+    if (item.href === "/erp/estudios") return rol === "director";
+    return true;
+  });
 
   const isActive = (href: string) => {
     if (href === "/erp") return pathname === "/erp";

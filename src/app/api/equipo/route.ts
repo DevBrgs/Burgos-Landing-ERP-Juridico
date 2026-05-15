@@ -15,9 +15,9 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from("abogados")
-      .select("id, nombre, especialidad, matricula, foto_url, fondo_url, bio, areas, experiencia, rol")
+      .select("id, nombre, especialidad, matricula, foto_url, fondo_url, bio, areas, experiencia, rol, whatsapp")
       .eq("activo", true)
-      .order("rol", { ascending: true }) // Director primero
+      .order("rol", { ascending: true })
       .order("creado_en", { ascending: true });
 
     if (error) {

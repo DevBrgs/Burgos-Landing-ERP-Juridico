@@ -18,6 +18,7 @@ interface Perfil {
   areas: string[];
   experiencia: string | null;
   rol: string;
+  whatsapp: string | null;
 }
 
 export default function PerfilPage() {
@@ -52,6 +53,7 @@ export default function PerfilPage() {
         experiencia: perfil.experiencia,
         foto_url: perfil.foto_url,
         fondo_url: perfil.fondo_url,
+        whatsapp: perfil.whatsapp,
       })
       .eq("id", perfil.id);
 
@@ -152,6 +154,11 @@ export default function PerfilPage() {
           <div>
             <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Experiencia</label>
             <input type="text" value={perfil.experiencia || ""} onChange={(e) => setPerfil({ ...perfil, experiencia: e.target.value })} placeholder="+10 años" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">WhatsApp (con código de país)</label>
+            <input type="text" value={perfil.whatsapp || ""} onChange={(e) => setPerfil({ ...perfil, whatsapp: e.target.value })} placeholder="5491112345678" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
+            <p className="text-[9px] text-burgos-gray-600 mt-1">Aparece como botón de contacto en la landing</p>
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Rol</label>

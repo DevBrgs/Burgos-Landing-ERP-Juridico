@@ -88,9 +88,9 @@ export default function MensajesPage() {
         <p className="text-burgos-gray-400 text-sm mt-1">Comunicación con clientes</p>
       </motion.div>
 
-      <div className="flex-1 flex gap-4 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
         {/* Lista de clientes */}
-        <div className="w-64 flex-shrink-0 bg-burgos-dark rounded-2xl border border-burgos-gray-800 overflow-y-auto">
+        <div className={`${selectedCliente ? "hidden lg:block" : ""} w-full lg:w-64 flex-shrink-0 bg-burgos-dark rounded-2xl border border-burgos-gray-800 overflow-y-auto`}>
           <div className="p-3 border-b border-burgos-gray-800">
             <p className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium">Clientes ({clientes.length})</p>
           </div>
@@ -109,7 +109,7 @@ export default function MensajesPage() {
         </div>
 
         {/* Chat */}
-        <div className="flex-1 bg-burgos-dark rounded-2xl border border-burgos-gray-800 flex flex-col overflow-hidden">
+        <div className={`${!selectedCliente ? "hidden lg:flex" : "flex"} flex-1 bg-burgos-dark rounded-2xl border border-burgos-gray-800 flex-col overflow-hidden`}>
           {!selectedCliente ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
@@ -120,9 +120,14 @@ export default function MensajesPage() {
           ) : (
             <>
               {/* Header */}
-              <div className="p-4 border-b border-burgos-gray-800 flex-shrink-0">
-                <p className="text-sm font-semibold text-burgos-white">{selectedCliente.nombre}</p>
-                <p className="text-[10px] text-burgos-gray-600">DNI: {selectedCliente.dni}</p>
+              <div className="p-4 border-b border-burgos-gray-800 flex-shrink-0 flex items-center gap-3">
+                <button onClick={() => setSelectedCliente(null)} className="lg:hidden w-8 h-8 bg-burgos-dark-2 border border-burgos-gray-800 rounded-lg flex items-center justify-center text-burgos-gray-400">
+                  ←
+                </button>
+                <div>
+                  <p className="text-sm font-semibold text-burgos-white">{selectedCliente.nombre}</p>
+                  <p className="text-[10px] text-burgos-gray-600">DNI: {selectedCliente.dni}</p>
+                </div>
               </div>
 
               {/* Messages */}
