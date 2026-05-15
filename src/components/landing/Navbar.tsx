@@ -11,6 +11,7 @@ const navLinks = [
   { href: "#newsletter", label: "Novedades" },
   { href: "#equipo", label: "Equipo" },
   { href: "#areas", label: "Áreas" },
+  { href: "#servicios", label: "Honorarios" },
   { href: "#contacto", label: "Contacto" },
 ];
 

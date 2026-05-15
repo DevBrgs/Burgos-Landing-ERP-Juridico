@@ -2,6 +2,7 @@ import { Hero } from "@/components/landing/Hero";
 import { NewsletterSection } from "@/components/landing/NewsletterSection";
 import { EquipoSection } from "@/components/landing/EquipoSection";
 import { AreasSection } from "@/components/landing/AreasSection";
+import { ServiciosSection } from "@/components/landing/ServiciosSection";
 import { ContactoSection } from "@/components/landing/ContactoSection";
 import { ChatWidget } from "@/components/landing/ChatWidget";
 import { Navbar } from "@/components/landing/Navbar";
@@ -67,6 +68,7 @@ export default function Home() {
         <NewsletterSection />
         <EquipoSection />
         <AreasSection />
+        <ServiciosSection />
         <ContactoSection />
       </main>
       <Footer />

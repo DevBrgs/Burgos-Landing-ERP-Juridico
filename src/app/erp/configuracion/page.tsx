@@ -155,8 +155,54 @@ export default function ConfiguracionPage() {
 }
 
 function ConfigGeneral() {
+  const [jusVerbal, setJusVerbal] = useState("");
+  const [jusEscrito, setJusEscrito] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      const res = await fetch("/api/configuracion");
+      const data = await res.json();
+      if (data.jus_verbal) setJusVerbal(data.jus_verbal);
+      if (data.jus_escrito) setJusEscrito(data.jus_escrito);
+    };
+    fetchConfig();
+  }, []);
+
+  const guardar = async () => {
+    setSaving(true);
+    await fetch("/api/configuracion", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clave: "jus_verbal", valor: jusVerbal }) });
+    await fetch("/api/configuracion", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clave: "jus_escrito", valor: jusEscrito }) });
+    setSaving(false);
+    setMsg("Valores actualizados. Se reflejan en la landing automáticamente.");
+    setTimeout(() => setMsg(""), 3000);
+  };
+
   return (
     <div className="space-y-6">
+      <h2 className="text-lg font-semibold text-burgos-white">Honorarios — Valor del JUS</h2>
+      <p className="text-sm text-burgos-gray-400">Estos valores se muestran en la landing pública del estudio.</p>
+
+      {msg && <div className="bg-green-500/10 text-green-400 text-sm px-4 py-3 rounded-xl">{msg}</div>}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">JUS Consulta Verbal ($)</label>
+          <input type="number" value={jusVerbal} onChange={(e) => setJusVerbal(e.target.value)} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
+        </div>
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">JUS Consulta Escrita ($)</label>
+          <input type="number" value={jusEscrito} onChange={(e) => setJusEscrito(e.target.value)} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
+        </div>
+      </div>
+
+      <button onClick={guardar} disabled={saving} className="bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black px-6 py-2.5 rounded-xl font-semibold text-sm transition-all">
+        {saving ? "Guardando..." : "Actualizar valores"}
+      </button>
+
+      <hr className="border-burgos-gray-800 my-6" />
+
       <h2 className="text-lg font-semibold text-burgos-white">Datos del Estudio</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -167,22 +213,7 @@ function ConfigGeneral() {
           <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Teléfono</label>
           <input type="text" defaultValue="(011) 4567-8900" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
         </div>
-        <div>
-          <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Dirección</label>
-          <input type="text" defaultValue="Av. Corrientes 1234, Piso 8, CABA" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
-        </div>
-        <div>
-          <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Email de contacto</label>
-          <input type="email" defaultValue="contacto@burgos.com.ar" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
-        </div>
       </div>
-      <div>
-        <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Horario de atención</label>
-        <input type="text" defaultValue="Lunes a Viernes, 9:00 a 18:00" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
-      </div>
-      <button className="bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black px-6 py-2.5 rounded-xl font-semibold text-sm transition-all">
-        Guardar cambios
-      </button>
     </div>
   );
 }
