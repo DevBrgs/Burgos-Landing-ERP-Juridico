@@ -11,6 +11,7 @@ import {
   EyeOff,
   X,
   Check,
+  Pencil,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -32,6 +33,7 @@ export default function AbogadosPage() {
   const [busqueda, setBusqueda] = useState("");
   const [currentRol, setCurrentRol] = useState<string>("asociado");
   const [showReasignar, setShowReasignar] = useState<Abogado | null>(null);
+  const [editingMember, setEditingMember] = useState<Abogado | null>(null);
 
   const supabase = createClient();
 
@@ -91,6 +93,12 @@ export default function AbogadosPage() {
     if (currentRol !== "director" && a.rol === "director") return false;
     return true;
   });
+
+  const canEdit = (member: Abogado) => {
+    if (currentRol === "director") return true;
+    if (currentRol === "asociado" && member.rol === "administrativo") return true;
+    return false;
+  };
 
   return (
     <div className="space-y-6">
@@ -207,6 +215,15 @@ export default function AbogadosPage() {
               )}
 
               <div className="flex gap-2">
+                {canEdit(abogado) && (
+                  <button
+                    onClick={() => setEditingMember(abogado)}
+                    className="text-xs py-2 px-3 rounded-lg font-medium transition-all border bg-burgos-gold/5 border-burgos-gold/20 text-burgos-gold hover:bg-burgos-gold/10"
+                    title="Editar"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                )}
                 {/* Fix 3: Hide desactivar for director if current user is not director */}
                 {!(currentRol !== "director" && abogado.rol === "director") && (
                   <button
@@ -245,6 +262,18 @@ export default function AbogadosPage() {
           onClose={() => setShowReasignar(null)}
           onSuccess={() => {
             setShowReasignar(null);
+            fetchAbogados();
+          }}
+        />
+      )}
+
+      {/* Modal de edición */}
+      {editingMember && (
+        <EditarMiembroModal
+          abogado={editingMember}
+          onClose={() => setEditingMember(null)}
+          onSuccess={() => {
+            setEditingMember(null);
             fetchAbogados();
           }}
         />
@@ -560,6 +589,171 @@ function ReasignarModal({
             </button>
           </div>
         </div>
+      </motion.div>
+    </div>
+  );
+}
+
+
+function EditarMiembroModal({
+  abogado,
+  onClose,
+  onSuccess,
+}: {
+  abogado: Abogado;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [form, setForm] = useState({
+    nombre: abogado.nombre,
+    especialidad: abogado.especialidad || "",
+    matricula: abogado.matricula || "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const supabase = createClient();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const { error: updateError } = await supabase
+        .from("abogados")
+        .update({
+          nombre: form.nombre,
+          especialidad: form.especialidad,
+          matricula: form.matricula,
+        })
+        .eq("id", abogado.id);
+
+      if (updateError) {
+        setError(updateError.message || "Error al actualizar");
+      } else {
+        onSuccess();
+      }
+    } catch {
+      setError("Error de conexión");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-burgos-white">
+            Editar Miembro
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-burgos-gray-600 hover:text-burgos-white transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-xl mb-4">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+              Nombre completo
+            </label>
+            <input
+              type="text"
+              required
+              value={form.nombre}
+              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+              className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm"
+              placeholder="Dr. Juan Pérez"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+              Email
+            </label>
+            <input
+              type="email"
+              disabled
+              value={abogado.email}
+              className="w-full px-4 py-3 bg-burgos-black/30 border border-burgos-gray-800 rounded-xl text-burgos-gray-500 text-sm cursor-not-allowed"
+            />
+            <p className="text-[10px] text-burgos-gray-600 mt-1">
+              El email no se puede modificar.
+            </p>
+          </div>
+
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+              Rol
+            </label>
+            <input
+              type="text"
+              disabled
+              value={abogado.rol.charAt(0).toUpperCase() + abogado.rol.slice(1)}
+              className="w-full px-4 py-3 bg-burgos-black/30 border border-burgos-gray-800 rounded-xl text-burgos-gray-500 text-sm cursor-not-allowed"
+            />
+            <p className="text-[10px] text-burgos-gray-600 mt-1">
+              El rol no se puede modificar.
+            </p>
+          </div>
+
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+              Especialidad
+            </label>
+            <input
+              type="text"
+              value={form.especialidad}
+              onChange={(e) =>
+                setForm({ ...form, especialidad: e.target.value })
+              }
+              className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm"
+              placeholder="Derecho Civil y Comercial"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">
+              Matrícula CPACF
+            </label>
+            <input
+              type="text"
+              value={form.matricula}
+              onChange={(e) => setForm({ ...form, matricula: e.target.value })}
+              className="w-full px-4 py-3 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 transition-colors text-sm"
+              placeholder="T° XX F° XXX"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full inline-flex items-center justify-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black py-3.5 rounded-xl font-semibold transition-all duration-300 mt-2"
+          >
+            {loading ? (
+              <span className="w-5 h-5 border-2 border-burgos-black/30 border-t-burgos-black rounded-full animate-spin" />
+            ) : (
+              <>
+                <Check size={18} />
+                Guardar cambios
+              </>
+            )}
+          </button>
+        </form>
       </motion.div>
     </div>
   );
