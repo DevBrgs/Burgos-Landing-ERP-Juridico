@@ -25,7 +25,7 @@ interface Comentario {
   id: string;
   contenido: string;
   creado_en: string;
-  autor_id: string;
+  abogado_id: string;
   autor_nombre?: string;
 }
 
@@ -144,7 +144,7 @@ function KanbanColumn({ title, count, color, tareas, onUpdate, onSelect, onToggl
                 {subtareasTotal > 0 && (
                   <div className="mb-2">
                     <div className="flex items-center gap-2 mb-1">
-                      <div className="flex-1 h-1 bg-burgos-gray-800 rounded-full overflow-hidden">
+                      <div className="flex-1 h-1 bg-gray-300 dark:bg-burgos-gray-800 rounded-full overflow-hidden">
                         <div className="h-full bg-burgos-gold rounded-full transition-all" style={{ width: `${(subtareasCompletadas / subtareasTotal) * 100}%` }} />
                       </div>
                       <span className="text-[9px] text-burgos-gray-600">{subtareasCompletadas}/{subtareasTotal}</span>
@@ -229,18 +229,18 @@ function ComentariosTarea({ tareaId }: { tareaId: string }) {
   const fetchComentarios = async () => {
     const { data } = await supabase
       .from("comentarios")
-      .select("id, contenido, creado_en, autor_id")
+      .select("id, contenido, creado_en, abogado_id")
       .eq("entidad", "tarea")
       .eq("entidad_id", tareaId)
       .order("creado_en", { ascending: true });
 
     if (data) {
       // Fetch author names
-      const autorIds = [...new Set(data.map(c => c.autor_id))];
+      const autorIds = [...new Set(data.map(c => c.abogado_id))];
       const { data: abogados } = await supabase.from("abogados").select("id, nombre").in("id", autorIds);
       const nombresMap = new Map(abogados?.map(a => [a.id, a.nombre]) || []);
 
-      setComentarios(data.map(c => ({ ...c, autor_nombre: nombresMap.get(c.autor_id) || "Usuario" })));
+      setComentarios(data.map(c => ({ ...c, autor_nombre: nombresMap.get(c.abogado_id) || "Usuario" })));
     }
     setLoading(false);
   };
@@ -260,7 +260,7 @@ function ComentariosTarea({ tareaId }: { tareaId: string }) {
       entidad: "tarea",
       entidad_id: tareaId,
       contenido: nuevoComentario.trim(),
-      autor_id: abogado.id,
+      abogado_id: abogado.id,
     });
 
     setNuevoComentario("");
