@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Send, MapPin, Phone, Mail, Clock } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function ContactoSection() {
   const [formData, setFormData] = useState({
@@ -13,6 +13,18 @@ export function ContactoSection() {
     mensaje: "",
   });
   const [enviado, setEnviado] = useState(false);
+  const [config, setConfig] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch("/api/configuracion");
+        const data = await res.json();
+        setConfig(data);
+      } catch {}
+    };
+    fetchConfig();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,10 +89,10 @@ export function ContactoSection() {
             className="space-y-4"
           >
             {[
-              { icon: MapPin, label: "Dirección", value: "Av. Corrientes 1234, Piso 8, CABA" },
-              { icon: Phone, label: "Teléfono", value: "(011) 4567-8900" },
-              { icon: Mail, label: "Email", value: "contacto@burgos.com.ar" },
-              { icon: Clock, label: "Horario", value: "Lun a Vie, 9:00 a 18:00" },
+              { icon: MapPin, label: "Dirección", value: config.direccion || "Av. Corrientes 1234, Piso 8, CABA" },
+              { icon: Phone, label: "Teléfono", value: config.telefono || "(011) 4567-8900" },
+              { icon: Mail, label: "Email", value: config.email_contacto || "contacto@burgos.com.ar" },
+              { icon: Clock, label: "Horario", value: config.horario || "Lun a Vie, 9:00 a 18:00" },
             ].map((item, i) => (
               <motion.div
                 key={item.label}
@@ -111,7 +123,7 @@ export function ContactoSection() {
               className="bg-burgos-dark-2 rounded-xl border border-burgos-gray-800 overflow-hidden h-40"
             >
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3284.0168878895463!2d-58.38375!3d-34.604!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzTCsDM2JzE0LjQiUyA1OMKwMjMnMDEuNSJX!5e0!3m2!1ses!2sar!4v1"
+                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(config.direccion || "Av. Corrientes 1234, CABA, Argentina")}`}
                 width="100%"
                 height="100%"
                 style={{ border: 0, filter: "invert(90%) hue-rotate(180deg) brightness(0.8) contrast(1.2)" }}
