@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { nombre, email, password, especialidad, matricula, rol } = body;
 
-    if (!nombre || !email || !password || !especialidad) {
+    if (!nombre || !email || !password) {
       return NextResponse.json(
         { error: "Faltan campos obligatorios" },
         { status: 400 }
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         user_id: authData.user.id,
         nombre,
         email,
-        especialidad,
+        especialidad: especialidad || "Administrativo",
         matricula: matricula || null,
         rol: rol || "asociado",
       })
