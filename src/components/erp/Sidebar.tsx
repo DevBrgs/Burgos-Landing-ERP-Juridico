@@ -88,7 +88,15 @@ export function Sidebar() {
 
       {/* Logout */}
       <div className="p-4 border-t border-burgos-gray-800">
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-burgos-gray-400 hover:text-red-400 hover:bg-red-500/5 transition-all duration-200 w-full">
+        <button
+          onClick={async () => {
+            const { createClient } = await import("@/lib/supabase/client");
+            const supabase = createClient();
+            await supabase.auth.signOut();
+            window.location.href = "/login";
+          }}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-burgos-gray-400 hover:text-red-400 hover:bg-red-500/5 transition-all duration-200 w-full"
+        >
           <LogOut size={18} />
           Cerrar sesión
         </button>
