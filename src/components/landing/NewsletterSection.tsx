@@ -16,6 +16,7 @@ const publicaciones = [
     autor: "Dr. Martín Burgos",
     fecha: "10 May 2025",
     destacado: true,
+    imagen: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&auto=format&fit=crop",
   },
   {
     id: "2",
@@ -26,6 +27,7 @@ const publicaciones = [
     autor: "Dra. Laura Méndez",
     fecha: "5 May 2025",
     destacado: false,
+    imagen: "https://images.unsplash.com/photo-1521791055366-0d553872125f?w=800&auto=format&fit=crop",
   },
   {
     id: "3",
@@ -36,6 +38,7 @@ const publicaciones = [
     autor: "Dra. Carolina Vega",
     fecha: "1 May 2025",
     destacado: false,
+    imagen: "https://images.unsplash.com/photo-1505664194779-8beaceb93744?w=800&auto=format&fit=crop",
   },
   {
     id: "4",
@@ -46,6 +49,7 @@ const publicaciones = [
     autor: "Dr. Alejandro Torres",
     fecha: "28 Abr 2025",
     destacado: false,
+    imagen: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&auto=format&fit=crop",
   },
   {
     id: "5",
@@ -56,6 +60,7 @@ const publicaciones = [
     autor: "Dra. Laura Méndez",
     fecha: "22 Abr 2025",
     destacado: false,
+    imagen: "https://images.unsplash.com/photo-1436450412740-6b988f486c6b?w=800&auto=format&fit=crop",
   },
 ];
 
@@ -141,8 +146,18 @@ export function NewsletterSection() {
               className="lg:col-span-3 group"
             >
               <Link href={`/newsletter/${destacado.id}`} className="block">
-                <div className="h-full bg-burgos-dark-2 rounded-2xl border border-burgos-gray-800 hover:border-burgos-gold/20 overflow-hidden transition-all duration-500 p-8 flex flex-col justify-between min-h-[320px]">
-                  <div>
+                <div className="h-full bg-burgos-dark-2 rounded-2xl border border-burgos-gray-800 hover:border-burgos-gold/20 overflow-hidden transition-all duration-500">
+                  {/* Imagen destacada */}
+                  <div className="relative h-52 overflow-hidden">
+                    <img
+                      src={destacado.imagen}
+                      alt={destacado.titulo}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-burgos-dark-2 via-transparent to-transparent" />
+                  </div>
+
+                  <div className="p-8">
                     <div className="flex items-center gap-3 mb-4">
                       <span
                         className={`text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full border ${categoriaStyle(destacado.categoria)}`}
@@ -154,22 +169,22 @@ export function NewsletterSection() {
                         {destacado.fecha}
                       </span>
                     </div>
-                    <h3 className="text-2xl sm:text-3xl font-bold text-burgos-white group-hover:text-burgos-gold transition-colors duration-300 mb-4">
+                    <h3 className="text-2xl font-bold text-burgos-white group-hover:text-burgos-gold transition-colors duration-300 mb-3">
                       {destacado.titulo}
                     </h3>
                     <p className="text-burgos-gray-400 leading-relaxed">
                       {destacado.resumen}
                     </p>
-                  </div>
-                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-burgos-gray-800">
-                    <span className="text-sm text-burgos-gray-400 flex items-center gap-1.5">
-                      <User size={12} />
-                      {destacado.autor}
-                    </span>
-                    <span className="text-burgos-gold text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
-                      Leer más
-                      <ArrowUpRight size={14} />
-                    </span>
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-burgos-gray-800">
+                      <span className="text-sm text-burgos-gray-400 flex items-center gap-1.5">
+                        <User size={12} />
+                        {destacado.autor}
+                      </span>
+                      <span className="text-burgos-gold text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+                        Leer más
+                        <ArrowUpRight size={14} />
+                      </span>
+                    </div>
                   </div>
                 </div>
               </Link>
@@ -187,24 +202,38 @@ export function NewsletterSection() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
                 <Link href={`/newsletter/${post.id}`} className="block group">
-                  <div className="bg-burgos-dark-2 rounded-xl border border-burgos-gray-800 hover:border-burgos-gold/20 p-5 transition-all duration-300">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span
-                        className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full border ${categoriaStyle(post.categoria)}`}
-                      >
-                        {post.categoria}
-                      </span>
-                      <span className="text-burgos-gray-600 text-[10px]">
-                        {post.fecha}
-                      </span>
+                  <div className="bg-burgos-dark-2 rounded-xl border border-burgos-gray-800 hover:border-burgos-gold/20 overflow-hidden transition-all duration-300 flex">
+                    {/* Thumbnail */}
+                    <div className="w-24 sm:w-28 flex-shrink-0 overflow-hidden">
+                      <img
+                        src={post.imagen}
+                        alt={post.titulo}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
                     </div>
-                    <h4 className="text-sm font-semibold text-burgos-white group-hover:text-burgos-gold transition-colors line-clamp-2 mb-1.5">
-                      {post.titulo}
-                    </h4>
-                    <p className="text-xs text-burgos-gray-400 flex items-center gap-1">
-                      <User size={10} />
-                      {post.autor}
-                    </p>
+                    {/* Content */}
+                    <div className="p-4 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span
+                          className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full border ${categoriaStyle(post.categoria)}`}
+                        >
+                          {post.categoria}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-semibold text-burgos-white group-hover:text-burgos-gold transition-colors line-clamp-2 mb-1.5">
+                        {post.titulo}
+                      </h4>
+                      <div className="flex items-center gap-3 text-[10px] text-burgos-gray-600">
+                        <span className="flex items-center gap-1">
+                          <User size={9} />
+                          {post.autor}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock size={9} />
+                          {post.fecha}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </Link>
               </motion.article>

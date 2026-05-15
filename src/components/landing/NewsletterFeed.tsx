@@ -14,6 +14,7 @@ const allPosts = [
     categoria: "Novedades Normativas",
     autor: "Dr. Martín Burgos",
     fecha: "10 May 2025",
+    imagen: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&auto=format&fit=crop",
   },
   {
     id: "2",
@@ -22,6 +23,7 @@ const allPosts = [
     categoria: "Casos de Éxito",
     autor: "Dra. Laura Méndez",
     fecha: "5 May 2025",
+    imagen: "https://images.unsplash.com/photo-1521791055366-0d553872125f?w=800&auto=format&fit=crop",
   },
   {
     id: "3",
@@ -30,6 +32,7 @@ const allPosts = [
     categoria: "Eventos",
     autor: "Dra. Carolina Vega",
     fecha: "1 May 2025",
+    imagen: "https://images.unsplash.com/photo-1505664194779-8beaceb93744?w=800&auto=format&fit=crop",
   },
   {
     id: "4",
@@ -38,6 +41,7 @@ const allPosts = [
     categoria: "Novedades Normativas",
     autor: "Dr. Alejandro Torres",
     fecha: "28 Abr 2025",
+    imagen: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&auto=format&fit=crop",
   },
   {
     id: "5",
@@ -46,6 +50,7 @@ const allPosts = [
     categoria: "Jurisprudencia",
     autor: "Dra. Laura Méndez",
     fecha: "22 Abr 2025",
+    imagen: "https://images.unsplash.com/photo-1436450412740-6b988f486c6b?w=800&auto=format&fit=crop",
   },
   {
     id: "6",
@@ -54,6 +59,7 @@ const allPosts = [
     categoria: "Guías",
     autor: "Dr. Federico Ruiz",
     fecha: "15 Abr 2025",
+    imagen: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&auto=format&fit=crop",
   },
   {
     id: "7",
@@ -62,6 +68,7 @@ const allPosts = [
     categoria: "Novedades Normativas",
     autor: "Dra. Laura Méndez",
     fecha: "10 Abr 2025",
+    imagen: "https://images.unsplash.com/photo-1575505586569-646b2ca898fc?w=800&auto=format&fit=crop",
   },
   {
     id: "8",
@@ -70,6 +77,7 @@ const allPosts = [
     categoria: "Casos de Éxito",
     autor: "Dr. Federico Ruiz",
     fecha: "5 Abr 2025",
+    imagen: "https://images.unsplash.com/photo-1479142506502-19b3a3b7ff33?w=800&auto=format&fit=crop",
   },
 ];
 
@@ -164,9 +172,18 @@ export function NewsletterFeed() {
               transition={{ duration: 0.4, delay: index * 0.05 }}
             >
               <Link href={`/newsletter/${post.id}`} className="block group">
-                <div className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 hover:border-burgos-gold/20 p-6 transition-all duration-300 hover:bg-burgos-dark-2">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
+                <div className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 hover:border-burgos-gold/20 overflow-hidden transition-all duration-300 hover:bg-burgos-dark-2 flex flex-col sm:flex-row">
+                  {/* Image */}
+                  <div className="sm:w-48 h-40 sm:h-auto flex-shrink-0 overflow-hidden">
+                    <img
+                      src={post.imagen}
+                      alt={post.titulo}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  {/* Content */}
+                  <div className="p-6 flex-1 flex flex-col justify-between">
+                    <div>
                       <div className="flex items-center gap-3 mb-3">
                         <span className={`text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full border ${categoriaStyle(post.categoria)}`}>
                           {post.categoria}
@@ -179,18 +196,20 @@ export function NewsletterFeed() {
                       <h3 className="text-lg font-semibold text-burgos-white group-hover:text-burgos-gold transition-colors mb-2">
                         {post.titulo}
                       </h3>
-                      <p className="text-sm text-burgos-gray-400 line-clamp-2 mb-3">
+                      <p className="text-sm text-burgos-gray-400 line-clamp-2">
                         {post.resumen}
                       </p>
+                    </div>
+                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-burgos-gray-800">
                       <span className="text-xs text-burgos-gray-600 flex items-center gap-1">
                         <User size={10} />
                         {post.autor}
                       </span>
+                      <ArrowUpRight
+                        size={16}
+                        className="text-burgos-gray-600 group-hover:text-burgos-gold transition-colors"
+                      />
                     </div>
-                    <ArrowUpRight
-                      size={20}
-                      className="text-burgos-gray-600 group-hover:text-burgos-gold transition-colors flex-shrink-0 mt-1"
-                    />
                   </div>
                 </div>
               </Link>
