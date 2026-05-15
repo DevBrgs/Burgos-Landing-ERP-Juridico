@@ -157,7 +157,55 @@ function NuevoExpedienteModal({ abogadoId, onClose, onSuccess }: { abogadoId: st
   const [form, setForm] = useState({ caratula: "", numero: "", fuero: "", juzgado: "", estado: "activo", notas_internas: "", es_general: false });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [conflictos, setConflictos] = useState<{ nombre: string; caratula: string }[]>([]);
   const supabase = createClient();
+
+  // Conflicto de intereses: parse carátula and search
+  useEffect(() => {
+    const checkConflictos = async () => {
+      const caratula = form.caratula.trim();
+      if (caratula.length < 5 || !caratula.includes("c/")) {
+        setConflictos([]);
+        return;
+      }
+
+      // Parse: "Actor c/ Demandado s/ Materia"
+      const partes: string[] = [];
+      const beforeC = caratula.split("c/")[0].trim();
+      const afterC = caratula.split("c/").slice(1).join("c/");
+      const demandado = afterC.split("s/")[0].trim();
+
+      if (beforeC) partes.push(beforeC);
+      if (demandado) partes.push(demandado);
+
+      if (partes.length === 0) { setConflictos([]); return; }
+
+      const found: { nombre: string; caratula: string }[] = [];
+
+      for (const parte of partes) {
+        // Search for this name in existing expedientes
+        const { data } = await supabase
+          .from("expedientes")
+          .select("caratula")
+          .ilike("caratula", `%${parte}%`)
+          .limit(5);
+
+        if (data && data.length > 0) {
+          data.forEach((exp) => {
+            // Don't flag if it's the same caratula being typed
+            if (exp.caratula.toLowerCase() !== caratula.toLowerCase()) {
+              found.push({ nombre: parte, caratula: exp.caratula });
+            }
+          });
+        }
+      }
+
+      setConflictos(found);
+    };
+
+    const timeout = setTimeout(checkConflictos, 500);
+    return () => clearTimeout(timeout);
+  }, [form.caratula]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,6 +238,19 @@ function NuevoExpedienteModal({ abogadoId, onClose, onSuccess }: { abogadoId: st
           <button onClick={onClose} className="text-burgos-gray-600 hover:text-burgos-white"><X size={20} /></button>
         </div>
         {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-xl mb-4">{error}</div>}
+
+        {/* Conflicto de intereses warning */}
+        {conflictos.length > 0 && (
+          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm px-4 py-3 rounded-xl mb-4">
+            <p className="font-semibold flex items-center gap-1 mb-1">⚠️ Posible conflicto de intereses</p>
+            {conflictos.slice(0, 3).map((c, i) => (
+              <p key={i} className="text-xs text-amber-300/80 mt-0.5">
+                &quot;{c.nombre}&quot; aparece en: <span className="text-amber-200">{c.caratula}</span>
+              </p>
+            ))}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Carátula *</label>

@@ -18,6 +18,8 @@ import {
   Download,
   Sparkles,
   Timer,
+  TrendingUp,
+  DollarSign,
 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -90,6 +92,7 @@ export default function ExpedienteDetallePage() {
   const [resumen, setResumen] = useState<string | null>(null);
   const [resumenLoading, setResumenLoading] = useState(false);
   const [showResumen, setShowResumen] = useState(false);
+  const [resumenTitulo, setResumenTitulo] = useState("Resumen del Caso");
 
   useEffect(() => {
     const fetch = async () => {
@@ -161,7 +164,9 @@ export default function ExpedienteDetallePage() {
   // Resumen IA
   const generarResumen = async () => {
     setResumenLoading(true);
+    setResumenTitulo("Resumen del Caso");
     setShowResumen(true);
+    setResumen(null);
     try {
       const textoActuaciones = actuaciones.map((a) => `- ${a.fecha}: ${a.titulo}${a.descripcion ? ` — ${a.descripcion}` : ""}`).join("\n");
       const prompt = `Sos un abogado argentino. Resumí el siguiente expediente de forma concisa y profesional. Carátula: "${expediente?.caratula}". Fuero: ${expediente?.fuero || "N/A"}. Juzgado: ${expediente?.juzgado || "N/A"}. Estado: ${expediente?.estado}.\n\nActuaciones:\n${textoActuaciones || "Sin actuaciones registradas."}\n\nGenerá un resumen ejecutivo del caso en 3-5 párrafos.`;
@@ -183,6 +188,66 @@ export default function ExpedienteDetallePage() {
       setResumen(data.reply || "No se pudo generar el resumen.");
     } catch {
       setResumen("Error al generar el resumen. Intentá nuevamente.");
+    }
+    setResumenLoading(false);
+  };
+
+  // Analizar plazos
+  const analizarPlazos = async () => {
+    setResumenLoading(true);
+    setResumenTitulo("Análisis de Plazos");
+    setShowResumen(true);
+    setResumen(null);
+    try {
+      const textoActuaciones = actuaciones.map((a) => `- ${a.fecha}: ${a.titulo}${a.descripcion ? ` — ${a.descripcion}` : ""}`).join("\n");
+      const prompt = `Sos un abogado procesalista argentino. Analizá los plazos procesales de este expediente. ¿Hay algún plazo que esté por vencer? ¿Qué acciones debería tomar el abogado?\n\nCarátula: "${expediente?.caratula}"\nFuero: ${expediente?.fuero || "N/A"}\nJuzgado: ${expediente?.juzgado || "N/A"}\nEstado: ${expediente?.estado}\n\nActuaciones:\n${textoActuaciones || "Sin actuaciones registradas."}\n\nDá un análisis detallado de plazos procesales, alertas y recomendaciones.`;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      let abogadoIdLocal = "";
+      if (user) {
+        const { data: abogado } = await supabase.from("abogados").select("id").eq("user_id", user.id).single();
+        if (abogado) abogadoIdLocal = abogado.id;
+      }
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: prompt, abogadoId: abogadoIdLocal, tipo: "privado" }),
+      });
+      const data = await res.json();
+      setResumen(data.reply || "No se pudo generar el análisis.");
+    } catch {
+      setResumen("Error al analizar plazos. Intentá nuevamente.");
+    }
+    setResumenLoading(false);
+  };
+
+  // Análisis de probabilidad
+  const analizarProbabilidad = async () => {
+    setResumenLoading(true);
+    setResumenTitulo("Análisis de Probabilidad");
+    setShowResumen(true);
+    setResumen(null);
+    try {
+      const textoActuaciones = actuaciones.map((a) => `- ${a.fecha}: ${a.titulo}${a.descripcion ? ` — ${a.descripcion}` : ""}`).join("\n");
+      const prompt = `Sos un abogado argentino con experiencia en litigios. Basándote en la carátula, fuero, actuaciones y estado de este expediente, ¿cuáles son las probabilidades de éxito? Dá una orientación general.\n\nCarátula: "${expediente?.caratula}"\nFuero: ${expediente?.fuero || "N/A"}\nJuzgado: ${expediente?.juzgado || "N/A"}\nEstado: ${expediente?.estado}\n\nActuaciones:\n${textoActuaciones || "Sin actuaciones registradas."}\n\nDá un análisis de probabilidades de éxito, factores a favor y en contra, y recomendaciones estratégicas. Aclará que es una orientación general y no constituye garantía de resultado.`;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      let abogadoIdLocal = "";
+      if (user) {
+        const { data: abogado } = await supabase.from("abogados").select("id").eq("user_id", user.id).single();
+        if (abogado) abogadoIdLocal = abogado.id;
+      }
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: prompt, abogadoId: abogadoIdLocal, tipo: "privado" }),
+      });
+      const data = await res.json();
+      setResumen(data.reply || "No se pudo generar el análisis.");
+    } catch {
+      setResumen("Error al analizar probabilidad. Intentá nuevamente.");
     }
     setResumenLoading(false);
   };
@@ -324,6 +389,18 @@ export default function ExpedienteDetallePage() {
           {resumenLoading ? "Generando..." : "Resumir caso"}
         </button>
 
+        {/* Analizar plazos */}
+        <button onClick={analizarPlazos} disabled={resumenLoading} className="inline-flex items-center gap-2 px-4 py-2 bg-burgos-dark border border-burgos-gray-800 rounded-xl text-sm text-burgos-white hover:border-amber-500/40 transition-colors disabled:opacity-50">
+          <Clock size={14} className="text-amber-400" />
+          Analizar plazos
+        </button>
+
+        {/* Análisis de probabilidad */}
+        <button onClick={analizarProbabilidad} disabled={resumenLoading} className="inline-flex items-center gap-2 px-4 py-2 bg-burgos-dark border border-burgos-gray-800 rounded-xl text-sm text-burgos-white hover:border-green-500/40 transition-colors disabled:opacity-50">
+          <TrendingUp size={14} className="text-green-400" />
+          Análisis de probabilidad
+        </button>
+
         {/* PDF */}
         <button onClick={generarPDF} className="inline-flex items-center gap-2 px-4 py-2 bg-burgos-dark border border-burgos-gray-800 rounded-xl text-sm text-burgos-white hover:border-burgos-gold/40 transition-colors">
           <Download size={14} className="text-burgos-gold" />
@@ -445,7 +522,10 @@ export default function ExpedienteDetallePage() {
                   <p className="text-sm text-burgos-white">{t.descripcion || "Trabajo registrado"}</p>
                   <p className="text-[10px] text-burgos-gray-600">{new Date(t.inicio).toLocaleString("es-AR")}</p>
                 </div>
-                <span className="text-sm font-mono text-burgos-gold">{t.duracion_minutos} min</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-mono text-burgos-gold">{t.duracion_minutos} min</span>
+                  <FacturarTimerBtn timer={t} expedienteId={id} caratula={expediente.caratula} />
+                </div>
               </div>
             ))}
           </div>
@@ -460,7 +540,7 @@ export default function ExpedienteDetallePage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-burgos-white flex items-center gap-2">
                 <Sparkles size={18} className="text-purple-400" />
-                Resumen del Caso
+                {resumenTitulo}
               </h2>
               <button onClick={() => setShowResumen(false)} className="text-burgos-gray-600 hover:text-burgos-white"><X size={20} /></button>
             </div>
@@ -545,5 +625,69 @@ function NuevaActuacionModal({ expedienteId, onClose, onSuccess }: { expedienteI
         </form>
       </motion.div>
     </div>
+  );
+}
+
+function FacturarTimerBtn({ timer, expedienteId, caratula }: { timer: TimerEntry; expedienteId: string; caratula: string }) {
+  const [showModal, setShowModal] = useState(false);
+  const [tarifa, setTarifa] = useState("15000");
+  const [loading, setLoading] = useState(false);
+  const [facturado, setFacturado] = useState(false);
+  const supabase = createClient();
+
+  const horas = (timer.duracion_minutos || 0) / 60;
+  const monto = horas * parseFloat(tarifa || "0");
+
+  const facturar = async () => {
+    setLoading(true);
+    await supabase.from("honorarios").insert({
+      expediente_id: expedienteId,
+      monto: Math.round(monto),
+      tipo: "pactado",
+      notas: `Facturación por ${timer.duracion_minutos} min de trabajo — ${caratula}`,
+    });
+    setLoading(false);
+    setFacturado(true);
+    setShowModal(false);
+  };
+
+  if (facturado) {
+    return <span className="text-[10px] text-green-400 font-medium">✓ Facturado</span>;
+  }
+
+  return (
+    <>
+      <button onClick={() => setShowModal(true)} className="inline-flex items-center gap-1 text-[10px] text-burgos-gold hover:text-burgos-gold-light transition-colors border border-burgos-gray-800 hover:border-burgos-gold/30 rounded-lg px-2 py-1">
+        <DollarSign size={10} /> Facturar
+      </button>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowModal(false)} />
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 w-full max-w-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-burgos-white">Facturar Horas</h3>
+              <button onClick={() => setShowModal(false)} className="text-burgos-gray-600 hover:text-burgos-white"><X size={16} /></button>
+            </div>
+            <div className="space-y-3">
+              <div className="bg-burgos-dark-2 rounded-xl p-3 border border-burgos-gray-800">
+                <p className="text-xs text-burgos-gray-400">Duración: <span className="text-burgos-white font-mono">{timer.duracion_minutos} min</span> ({horas.toFixed(2)} hs)</p>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Tarifa por hora ($)</label>
+                <input type="number" value={tarifa} onChange={(e) => setTarifa(e.target.value)} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
+              </div>
+              <div className="bg-burgos-gold/5 border border-burgos-gold/20 rounded-xl p-3">
+                <p className="text-xs text-burgos-gray-400">Monto a facturar:</p>
+                <p className="text-lg font-bold text-burgos-gold">${Math.round(monto).toLocaleString()}</p>
+              </div>
+              <button onClick={facturar} disabled={loading || monto <= 0} className="w-full bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black py-2.5 rounded-xl font-semibold text-sm transition-all">
+                {loading ? "Generando..." : "Generar Honorario"}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </>
   );
 }

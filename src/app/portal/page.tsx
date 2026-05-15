@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { LogIn, Eye, EyeOff, Scale } from "lucide-react";
+import { LogIn, Eye, EyeOff, Scale, PenTool, Check, RotateCcw } from "lucide-react";
 import Image from "next/image";
+import { createClient } from "@/lib/supabase/client";
 
 interface ClienteSession {
   id: string;
@@ -59,7 +60,7 @@ function PortalLogin({ onLogin }: { onLogin: (s: ClienteSession) => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading) return; // Prevent double submit
+    if (loading) return;
     setError("");
     setLoading(true);
 
@@ -156,10 +157,94 @@ function CambiarClave({ clienteId, onDone }: { clienteId: string; onDone: () => 
   );
 }
 
+function FirmaPad({ onSave }: { onSave: (dataUrl: string) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [drawing, setDrawing] = useState(false);
+  const [hasDrawn, setHasDrawn] = useState(false);
+
+  const getPos = (e: React.MouseEvent | React.TouchEvent) => {
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    if ("touches" in e) {
+      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    }
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  const startDraw = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    setDrawing(true);
+    setHasDrawn(true);
+    const ctx = canvasRef.current!.getContext("2d")!;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!drawing) return;
+    e.preventDefault();
+    const ctx = canvasRef.current!.getContext("2d")!;
+    const pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.strokeStyle = "#c9a84c";
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+  };
+
+  const stopDraw = () => setDrawing(false);
+
+  const limpiar = () => {
+    const canvas = canvasRef.current!;
+    const ctx = canvas.getContext("2d")!;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasDrawn(false);
+  };
+
+  const guardar = () => {
+    const dataUrl = canvasRef.current!.toDataURL("image/png");
+    onSave(dataUrl);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="border border-burgos-gray-800 rounded-xl overflow-hidden bg-burgos-black/50">
+        <canvas
+          ref={canvasRef}
+          width={500}
+          height={200}
+          className="w-full h-[200px] cursor-crosshair touch-none"
+          onMouseDown={startDraw}
+          onMouseMove={draw}
+          onMouseUp={stopDraw}
+          onMouseLeave={stopDraw}
+          onTouchStart={startDraw}
+          onTouchMove={draw}
+          onTouchEnd={stopDraw}
+        />
+      </div>
+      <p className="text-[10px] text-burgos-gray-600 text-center">Dibujá tu firma con el mouse o el dedo</p>
+      <div className="flex gap-3">
+        <button onClick={limpiar} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-burgos-gray-800 rounded-xl text-sm text-burgos-gray-400 hover:border-burgos-gray-600 transition-all">
+          <RotateCcw size={14} /> Limpiar
+        </button>
+        <button onClick={guardar} disabled={!hasDrawn} className="flex-1 inline-flex items-center justify-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black px-4 py-2.5 rounded-xl font-semibold text-sm transition-all">
+          <Check size={14} /> Guardar firma
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PortalDashboard({ session, onLogout }: { session: ClienteSession; onLogout: () => void }) {
   const [expedientes, setExpedientes] = useState<any[]>([]);
-  const [tab, setTab] = useState<"expedientes" | "turnos" | "mensajes">("expedientes");
+  const [tab, setTab] = useState<"expedientes" | "turnos" | "mensajes" | "firma">("expedientes");
   const [loading, setLoading] = useState(true);
+  const [firmaSaved, setFirmaSaved] = useState(false);
+  const [firmaLoading, setFirmaLoading] = useState(false);
+  const supabase = createClient();
 
   useEffect(() => {
     const loadExpedientes = async () => {
@@ -174,6 +259,30 @@ function PortalDashboard({ session, onLogout }: { session: ClienteSession; onLog
     };
     loadExpedientes();
   }, [session.id]);
+
+  const handleSaveFirma = async (dataUrl: string) => {
+    setFirmaLoading(true);
+    try {
+      // Convert data URL to blob
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const fileName = `firmas/${session.id}_${Date.now()}.png`;
+
+      const { error } = await supabase.storage
+        .from("expedientes-docs")
+        .upload(fileName, blob, { contentType: "image/png", upsert: true });
+
+      if (!error) {
+        setFirmaSaved(true);
+        setTimeout(() => setFirmaSaved(false), 3000);
+      } else {
+        alert("Error al guardar la firma. Intentá de nuevo.");
+      }
+    } catch {
+      alert("Error de conexión al guardar la firma.");
+    }
+    setFirmaLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-burgos-black">
@@ -195,9 +304,10 @@ function PortalDashboard({ session, onLogout }: { session: ClienteSession; onLog
 
       {/* Tabs */}
       <div className="max-w-5xl mx-auto px-4 pt-6">
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 flex-wrap">
           {[
             { id: "expedientes" as const, label: "Mis Expedientes" },
+            { id: "firma" as const, label: "Firmar Documento" },
             { id: "turnos" as const, label: "Turnos" },
             { id: "mensajes" as const, label: "Mensajes" },
           ].map((t) => (
@@ -240,6 +350,31 @@ function PortalDashboard({ session, onLogout }: { session: ClienteSession; onLog
               </div>
             )}
           </>
+        )}
+
+        {tab === "firma" && (
+          <div className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8">
+            <div className="flex items-center gap-2 mb-4">
+              <PenTool size={18} className="text-burgos-gold" />
+              <h2 className="text-lg font-bold text-burgos-white">Firmar Documento</h2>
+            </div>
+            <p className="text-burgos-gray-400 text-sm mb-6">Dibujá tu firma abajo. Se guardará de forma segura y podrá ser utilizada para firmar documentos electrónicamente.</p>
+
+            {firmaSaved && (
+              <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-3 rounded-xl mb-4 flex items-center gap-2">
+                <Check size={16} /> Firma guardada correctamente.
+              </div>
+            )}
+
+            {firmaLoading ? (
+              <div className="text-center py-12">
+                <div className="w-8 h-8 border-2 border-burgos-gold/30 border-t-burgos-gold rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-burgos-gray-400 text-sm">Guardando firma...</p>
+              </div>
+            ) : (
+              <FirmaPad onSave={handleSaveFirma} />
+            )}
+          </div>
         )}
 
         {tab === "turnos" && (

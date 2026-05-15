@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { DollarSign, Plus, X, TrendingUp, AlertCircle } from "lucide-react";
+import { DollarSign, Plus, X, TrendingUp, AlertCircle, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Honorario {
@@ -35,6 +35,7 @@ export default function HonorariosPage() {
   const [honorarios, setHonorarios] = useState<Honorario[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showFacturarHoras, setShowFacturarHoras] = useState(false);
   const supabase = createClient();
 
   const fetchHonorarios = async () => {
@@ -70,9 +71,14 @@ export default function HonorariosPage() {
           </h1>
           <p className="text-burgos-gray-400 text-sm mt-1">Gestión de cobros y facturación</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="inline-flex items-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300">
-          <Plus size={16} /> Nuevo Honorario
-        </button>
+        <div className="flex gap-3">
+          <button onClick={() => setShowFacturarHoras(true)} className="inline-flex items-center gap-2 bg-burgos-dark border border-burgos-gray-800 hover:border-burgos-gold/30 text-burgos-white px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-300">
+            <TrendingUp size={16} /> Facturar Horas
+          </button>
+          <button onClick={() => setShowModal(true)} className="inline-flex items-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300">
+            <Plus size={16} /> Nuevo Honorario
+          </button>
+        </div>
       </motion.div>
 
       {/* Stats */}
@@ -139,6 +145,7 @@ export default function HonorariosPage() {
       </motion.div>
 
       {showModal && <NuevoHonorarioModal onClose={() => setShowModal(false)} onSuccess={() => { setShowModal(false); fetchHonorarios(); }} />}
+      {showFacturarHoras && <FacturarHorasModal onClose={() => setShowFacturarHoras(false)} onSuccess={() => { setShowFacturarHoras(false); fetchHonorarios(); }} />}
     </div>
   );
 }
@@ -212,6 +219,128 @@ function NuevoHonorarioModal({ onClose, onSuccess }: { onClose: () => void; onSu
             {loading ? "Guardando..." : "Registrar Honorario"}
           </button>
         </form>
+      </motion.div>
+    </div>
+  );
+}
+
+interface TimerWithExp {
+  id: string;
+  descripcion: string | null;
+  duracion_minutos: number | null;
+  inicio: string;
+  expediente_id: string;
+  expedientes?: { caratula: string } | null;
+}
+
+function FacturarHorasModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [timers, setTimers] = useState<TimerWithExp[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tarifa, setTarifa] = useState("15000");
+  const [facturando, setFacturando] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchTimers = async () => {
+      const { data } = await supabase
+        .from("timers")
+        .select("id, descripcion, duracion_minutos, inicio, expediente_id, expedientes(caratula)")
+        .order("inicio", { ascending: false })
+        .limit(50);
+      if (data) setTimers(data as unknown as TimerWithExp[]);
+      setLoading(false);
+    };
+    fetchTimers();
+  }, []);
+
+  // Group by expediente
+  const grouped = timers.reduce((acc, t) => {
+    const key = t.expediente_id;
+    if (!acc[key]) acc[key] = { caratula: (t.expedientes as any)?.caratula || "Sin carátula", timers: [], totalMin: 0 };
+    acc[key].timers.push(t);
+    acc[key].totalMin += t.duracion_minutos || 0;
+    return acc;
+  }, {} as Record<string, { caratula: string; timers: TimerWithExp[]; totalMin: number }>);
+
+  const facturarTodos = async () => {
+    setFacturando(true);
+    const tarifaNum = parseFloat(tarifa) || 0;
+
+    for (const [expId, group] of Object.entries(grouped)) {
+      const horas = group.totalMin / 60;
+      const monto = Math.round(horas * tarifaNum);
+      if (monto > 0) {
+        await supabase.from("honorarios").insert({
+          expediente_id: expId,
+          monto,
+          tipo: "pactado",
+          notas: `Facturación por ${group.totalMin} min (${horas.toFixed(1)} hs) de trabajo`,
+        });
+      }
+    }
+
+    setFacturando(false);
+    onSuccess();
+  };
+
+  const totalMinutos = Object.values(grouped).reduce((sum, g) => sum + g.totalMin, 0);
+  const totalHoras = totalMinutos / 60;
+  const montoTotal = Math.round(totalHoras * (parseFloat(tarifa) || 0));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-burgos-white flex items-center gap-2">
+            <Clock size={18} className="text-burgos-gold" />
+            Facturar Horas
+          </h2>
+          <button onClick={onClose} className="text-burgos-gray-600 hover:text-burgos-white"><X size={20} /></button>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-8"><div className="w-8 h-8 border-2 border-burgos-gold/30 border-t-burgos-gold rounded-full animate-spin mx-auto" /></div>
+        ) : Object.keys(grouped).length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-burgos-gray-600 text-sm">No hay horas registradas para facturar.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Tarifa por hora ($)</label>
+              <input type="number" value={tarifa} onChange={(e) => setTarifa(e.target.value)} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
+            </div>
+
+            <div className="space-y-2">
+              {Object.entries(grouped).map(([expId, group]) => (
+                <div key={expId} className="bg-burgos-dark-2 rounded-xl border border-burgos-gray-800 p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-burgos-white font-medium truncate max-w-[250px]">{group.caratula}</p>
+                      <p className="text-[10px] text-burgos-gray-600">{group.timers.length} registros · {group.totalMin} min ({(group.totalMin / 60).toFixed(1)} hs)</p>
+                    </div>
+                    <span className="text-sm font-bold text-burgos-gold">${Math.round((group.totalMin / 60) * (parseFloat(tarifa) || 0)).toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-burgos-gold/5 border border-burgos-gold/20 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-burgos-gray-400">Total a facturar</p>
+                  <p className="text-[10px] text-burgos-gray-600">{totalMinutos} min ({totalHoras.toFixed(1)} hs) × ${parseFloat(tarifa || "0").toLocaleString()}/h</p>
+                </div>
+                <p className="text-xl font-bold text-burgos-gold">${montoTotal.toLocaleString()}</p>
+              </div>
+            </div>
+
+            <button onClick={facturarTodos} disabled={facturando || montoTotal <= 0} className="w-full bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black py-3 rounded-xl font-semibold transition-all">
+              {facturando ? "Generando honorarios..." : "Generar Honorarios"}
+            </button>
+          </div>
+        )}
       </motion.div>
     </div>
   );
