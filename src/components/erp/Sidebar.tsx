@@ -68,6 +68,10 @@ export function Sidebar() {
   // Filtrar items según rol
   const visibleItems = navItems.filter((item) => {
     if (item.href === "/erp/estudios") return rol === "director";
+    if (rol === "administrativo") {
+      const adminAllowed = ["/erp", "/erp/turnos", "/erp/clientes", "/erp/honorarios", "/erp/mensajes", "/erp/perfil", "/erp/configuracion"];
+      return adminAllowed.includes(item.href);
+    }
     return true;
   });
 

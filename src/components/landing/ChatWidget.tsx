@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Bot, User } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, Phone } from "lucide-react";
 import Image from "next/image";
 
 interface Message {
@@ -23,11 +23,24 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Fetch whatsapp_admin from configuracion
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch("/api/configuracion");
+        const data = await res.json();
+        if (data.whatsapp_admin) setWhatsappNumber(data.whatsapp_admin);
+      } catch {}
+    };
+    fetchConfig();
+  }, []);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +88,29 @@ export function ChatWidget() {
 
   return (
     <>
-      {/* Button */}
+      {/* WhatsApp Button - above chat button */}
+      <AnimatePresence>
+        {!isOpen && whatsappNumber && (
+          <motion.a
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            href={`https://wa.me/${whatsappNumber}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="fixed bottom-24 right-6 z-50 w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.3)] flex items-center justify-center transition-colors group"
+            aria-label="WhatsApp Administración"
+            title="WhatsApp Administración"
+          >
+            <Phone className="w-6 h-6 text-white" />
+            <span className="absolute right-16 bg-burgos-dark border border-burgos-gray-800 text-burgos-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              WhatsApp Administración
+            </span>
+          </motion.a>
+        )}
+      </AnimatePresence>
+
+      {/* Chat Button */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
