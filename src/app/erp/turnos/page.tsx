@@ -593,10 +593,20 @@ function NuevoTurnoModal({
     hora: "",
     motivo: "",
     nombre_externo: "",
+    cliente_id: "",
     notas: "",
   });
   const [loading, setLoading] = useState(false);
+  const [clientes, setClientes] = useState<{ id: string; nombre: string; dni: string }[]>([]);
   const supabase = createClient();
+
+  useEffect(() => {
+    const fetchClientes = async () => {
+      const { data } = await supabase.from("clientes").select("id, nombre, dni").eq("activo", true).order("nombre");
+      if (data) setClientes(data);
+    };
+    fetchClientes();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -630,12 +640,17 @@ function NuevoTurnoModal({
       return;
     }
 
+    // Si se seleccionó un cliente, usar su nombre como nombre_externo también
+    const clienteSeleccionado = clientes.find(c => c.id === form.cliente_id);
+    const nombreFinal = form.nombre_externo || (clienteSeleccionado ? clienteSeleccionado.nombre : null);
+
     await supabase.from("turnos").insert({
       abogado_id: abogado.id,
       fecha: form.fecha,
       hora: form.hora,
       motivo: form.motivo,
-      nombre_externo: form.nombre_externo || null,
+      nombre_externo: nombreFinal || null,
+      cliente_id: form.cliente_id || null,
       notas: form.notas || null,
       origen: "manual",
     });
@@ -675,8 +690,15 @@ function NuevoTurnoModal({
             <input type="text" required value={form.motivo} onChange={(e) => setForm({ ...form, motivo: e.target.value })} placeholder="Consulta inicial, seguimiento..." className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Nombre del cliente (opcional)</label>
-            <input type="text" value={form.nombre_externo} onChange={(e) => setForm({ ...form, nombre_externo: e.target.value })} placeholder="Juan Pérez" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Cliente registrado</label>
+            <select value={form.cliente_id} onChange={(e) => setForm({ ...form, cliente_id: e.target.value })} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm appearance-none">
+              <option value="" className="bg-burgos-dark">Sin cliente registrado</option>
+              {clientes.map((c) => <option key={c.id} value={c.id} className="bg-burgos-dark">{c.nombre} — DNI: {c.dni}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Nombre externo (si no está registrado)</label>
+            <input type="text" value={form.nombre_externo} onChange={(e) => setForm({ ...form, nombre_externo: e.target.value })} placeholder="Juan Pérez (solo si no seleccionaste arriba)" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Notas</label>

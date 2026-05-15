@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Users, Plus, Search, X, Key, Copy, Check, Pencil, Trash2 } from "lucide-react";
+import { Users, Plus, Search, X, Key, Copy, Check, Pencil, Trash2, Eye } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 interface Cliente {
@@ -130,6 +131,13 @@ export default function ClientesPage() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/erp/clientes/${cliente.id}`}
+                        className="w-7 h-7 bg-burgos-dark-2 border border-burgos-gray-800 rounded-lg flex items-center justify-center text-burgos-gray-400 hover:text-blue-400 hover:border-blue-500/30 transition-all"
+                        title="Ver ficha"
+                      >
+                        <Eye size={12} />
+                      </Link>
                       <button
                         onClick={() => setShowEditModal(cliente)}
                         className="w-7 h-7 bg-burgos-dark-2 border border-burgos-gray-800 rounded-lg flex items-center justify-center text-burgos-gray-400 hover:text-burgos-gold hover:border-burgos-gold/30 transition-all"

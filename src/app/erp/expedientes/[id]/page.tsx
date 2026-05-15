@@ -20,6 +20,7 @@ import {
   Timer,
   TrendingUp,
   DollarSign,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -35,6 +36,7 @@ interface Expediente {
   estado: string;
   notas_internas: string | null;
   creado_en: string;
+  cliente_id: string | null;
 }
 
 interface Actuacion {
@@ -60,6 +62,14 @@ interface TimerEntry {
   fin: string | null;
   duracion_minutos: number | null;
   creado_en: string;
+}
+
+interface ClienteInfo {
+  id: string;
+  nombre: string;
+  dni: string;
+  email: string | null;
+  telefono: string | null;
 }
 
 const estadoLabels: Record<string, string> = {
@@ -94,6 +104,9 @@ export default function ExpedienteDetallePage() {
   const [showResumen, setShowResumen] = useState(false);
   const [resumenTitulo, setResumenTitulo] = useState("Resumen del Caso");
 
+  // Cliente vinculado
+  const [clienteInfo, setClienteInfo] = useState<ClienteInfo | null>(null);
+
   useEffect(() => {
     const fetch = async () => {
       const [expRes, actRes, docRes, timerRes] = await Promise.all([
@@ -106,6 +119,13 @@ export default function ExpedienteDetallePage() {
       if (actRes.data) setActuaciones(actRes.data);
       if (docRes.data) setDocumentos(docRes.data);
       if (timerRes.data) setTimers(timerRes.data);
+
+      // Fetch cliente vinculado
+      if (expRes.data?.cliente_id) {
+        const { data: cli } = await supabase.from("clientes").select("id, nombre, dni, email, telefono").eq("id", expRes.data.cliente_id).single();
+        if (cli) setClienteInfo(cli);
+      }
+
       setLoading(false);
     };
     fetch();
@@ -370,6 +390,14 @@ export default function ExpedienteDetallePage() {
 
       {/* Action buttons: Timer, Resumen IA, PDF */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="flex flex-wrap gap-3">
+
+        {/* Cliente vinculado */}
+        {clienteInfo && (
+          <Link href={`/erp/clientes/${clienteInfo.id}`} className="inline-flex items-center gap-2 px-4 py-2 bg-burgos-gold/5 border border-burgos-gold/20 rounded-xl text-sm text-burgos-gold hover:bg-burgos-gold/10 transition-colors">
+            <User size={14} />
+            {clienteInfo.nombre} <span className="text-burgos-gray-400 text-xs">DNI: {clienteInfo.dni}</span>
+          </Link>
+        )}
         {/* Timer */}
         {!timerActivo ? (
           <button onClick={iniciarTimer} className="inline-flex items-center gap-2 px-4 py-2 bg-burgos-dark border border-burgos-gray-800 rounded-xl text-sm text-burgos-white hover:border-burgos-gold/40 transition-colors">

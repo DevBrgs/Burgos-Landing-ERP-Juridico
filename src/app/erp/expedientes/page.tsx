@@ -154,11 +154,21 @@ export default function ExpedientesPage() {
 }
 
 function NuevoExpedienteModal({ abogadoId, onClose, onSuccess }: { abogadoId: string | null; onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ caratula: "", numero: "", fuero: "", juzgado: "", estado: "activo", notas_internas: "", es_general: false });
+  const [form, setForm] = useState({ caratula: "", numero: "", fuero: "", juzgado: "", estado: "activo", notas_internas: "", es_general: false, cliente_id: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [conflictos, setConflictos] = useState<{ nombre: string; caratula: string }[]>([]);
+  const [clientes, setClientes] = useState<{ id: string; nombre: string; dni: string }[]>([]);
   const supabase = createClient();
+
+  // Fetch clientes for selector
+  useEffect(() => {
+    const fetchClientes = async () => {
+      const { data } = await supabase.from("clientes").select("id, nombre, dni").eq("activo", true).order("nombre");
+      if (data) setClientes(data);
+    };
+    fetchClientes();
+  }, []);
 
   // Conflicto de intereses: parse carátula and search
   useEffect(() => {
@@ -222,6 +232,7 @@ function NuevoExpedienteModal({ abogadoId, onClose, onSuccess }: { abogadoId: st
       notas_internas: form.notas_internas || null,
       abogado_id: abogadoId,
       es_general: form.es_general,
+      cliente_id: form.cliente_id || null,
     });
 
     if (insertError) { setError(insertError.message); setLoading(false); return; }
@@ -278,6 +289,14 @@ function NuevoExpedienteModal({ abogadoId, onClose, onSuccess }: { abogadoId: st
           <div>
             <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Juzgado</label>
             <input type="text" value={form.juzgado} onChange={(e) => setForm({ ...form, juzgado: e.target.value })} placeholder="Juzgado Civil N° 45" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Cliente vinculado</label>
+            <select value={form.cliente_id} onChange={(e) => setForm({ ...form, cliente_id: e.target.value })} className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm appearance-none">
+              <option value="" className="bg-burgos-dark">Sin cliente (opcional)</option>
+              {clientes.map((c) => <option key={c.id} value={c.id} className="bg-burgos-dark">{c.nombre} — DNI: {c.dni}</option>)}
+            </select>
+            <p className="text-[10px] text-burgos-gray-600 mt-1">Vinculá un cliente para que vea este expediente desde su portal.</p>
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Notas internas</label>
