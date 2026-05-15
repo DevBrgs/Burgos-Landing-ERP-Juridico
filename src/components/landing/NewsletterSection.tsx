@@ -83,12 +83,24 @@ export function NewsletterSection() {
   const [email, setEmail] = useState("");
   const [suscrito, setSuscrito] = useState(false);
 
-  const handleSuscripcion = (e: React.FormEvent) => {
+  const handleSuscripcion = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Suscripción:", email);
-    setSuscrito(true);
-    setEmail("");
-    setTimeout(() => setSuscrito(false), 4000);
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setSuscrito(true);
+        setEmail("");
+        setTimeout(() => setSuscrito(false), 4000);
+      }
+    } catch {
+      setSuscrito(true);
+      setEmail("");
+      setTimeout(() => setSuscrito(false), 4000);
+    }
   };
 
   const destacado = publicaciones.find((p) => p.destacado);
