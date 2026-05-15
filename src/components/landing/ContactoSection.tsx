@@ -62,7 +62,7 @@ export function ContactoSection() {
           </h2>
           <p className="text-burgos-gray-400 max-w-lg mx-auto">
             Contanos tu situación y te derivaremos con el profesional
-            especializado. La primera consulta es sin cargo.
+            especializado.
           </p>
           <div className="w-12 h-[1px] bg-burgos-gold/40 mx-auto mt-6" />
         </motion.div>

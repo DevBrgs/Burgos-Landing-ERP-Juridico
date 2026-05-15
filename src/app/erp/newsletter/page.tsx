@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Newspaper, Plus, X, Eye, Edit, Globe, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { FileUpload } from "@/components/ui/FileUpload";
 
 interface Post {
   id: string;
@@ -190,8 +191,17 @@ function NuevoPostModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
               </select>
             </div>
             <div>
-              <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">URL imagen (opcional)</label>
-              <input type="url" value={form.imagen_url} onChange={(e) => setForm({ ...form, imagen_url: e.target.value })} placeholder="https://..." className="w-full px-3 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
+              <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Imagen</label>
+              <FileUpload
+                bucket="newsletter-imgs"
+                folder="posts"
+                accept="image/*"
+                maxSizeMB={5}
+                label="Subir imagen"
+                compact
+                onUpload={(url) => setForm({ ...form, imagen_url: url })}
+              />
+              {form.imagen_url && <p className="text-[9px] text-green-400 mt-1">✓ Imagen cargada</p>}
             </div>
           </div>
           <button type="submit" disabled={loading} className="w-full bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black py-3 rounded-xl font-semibold transition-all duration-300">

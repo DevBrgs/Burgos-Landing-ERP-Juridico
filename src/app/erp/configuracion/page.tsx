@@ -13,6 +13,7 @@ import {
   Key,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { FileUpload } from "@/components/ui/FileUpload";
 
 const secciones = [
   {
@@ -256,9 +257,20 @@ function ConfigLanding() {
           <input type="text" defaultValue="Soluciones legales integrales con compromiso, experiencia y resultados." className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
         </div>
         <div>
-          <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">URL de video/imagen de fondo (Hero)</label>
-          <input type="url" placeholder="https://... (dejar vacío para fondo por defecto)" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
-          <p className="text-[10px] text-burgos-gray-600 mt-1">Soporta video MP4 o imagen JPG/PNG</p>
+          <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Video o imagen de fondo (Hero)</label>
+          <FileUpload
+            bucket="landing-media"
+            folder="hero"
+            accept="image/*,video/mp4"
+            maxSizeMB={50}
+            label="Subir video o imagen"
+            onUpload={(url) => { console.log("Hero media:", url); }}
+          />
+          <p className="text-[10px] text-burgos-gray-600 mt-1">Soporta video MP4 o imagen JPG/PNG. Máximo 50MB.</p>
+        </div>
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Ubicación del estudio</label>
+          <input type="text" defaultValue="Av. Corrientes 1234, Piso 8, CABA" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" placeholder="Dirección completa" />
         </div>
         <div>
           <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Descripción SEO</label>

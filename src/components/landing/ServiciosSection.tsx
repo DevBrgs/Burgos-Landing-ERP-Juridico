@@ -47,7 +47,6 @@ export function ServiciosSection() {
           </h2>
           <p className="text-burgos-gray-400 max-w-lg mx-auto">
             Valores de referencia para consultas profesionales.
-            La primera consulta es sin cargo.
           </p>
           <div className="w-12 h-[1px] bg-burgos-gold/40 mx-auto mt-6" />
         </motion.div>
@@ -111,7 +110,7 @@ export function ServiciosSection() {
             href="#contacto"
             className="inline-block mt-3 text-sm text-burgos-gold hover:text-burgos-gold-light font-medium transition-colors"
           >
-            Primera consulta sin cargo →
+            Solicitar consulta →
           </a>
         </motion.div>
       </div>
