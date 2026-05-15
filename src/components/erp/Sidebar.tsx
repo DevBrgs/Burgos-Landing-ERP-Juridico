@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   FolderOpen,
   Calendar,
+  CalendarDays,
   CheckSquare,
   Gavel,
   Users,
@@ -35,6 +36,7 @@ const navItems = [
   { href: "/erp/dashboard-director", label: "Métricas", icon: BarChart3 },
   { href: "/erp/expedientes", label: "Expedientes", icon: FolderOpen },
   { href: "/erp/turnos", label: "Turnos", icon: Calendar },
+  { href: "/erp/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/erp/tareas", label: "Tareas", icon: CheckSquare },
   { href: "/erp/audiencias", label: "Audiencias", icon: Gavel },
   { href: "/erp/honorarios", label: "Honorarios", icon: DollarSign },
@@ -57,6 +59,7 @@ const navItemDescriptions: Record<string, string> = {
   "/erp/dashboard-director": "Gráficos y métricas del estudio",
   "/erp/expedientes": "Gestión de casos y legajos",
   "/erp/turnos": "Agenda de citas y disponibilidad",
+  "/erp/calendario": "Vista unificada de eventos",
   "/erp/tareas": "Tablero kanban de trabajo",
   "/erp/audiencias": "Calendario de audiencias judiciales",
   "/erp/honorarios": "Cobros y facturación",
@@ -96,7 +99,7 @@ export function Sidebar() {
     if (item.href === "/erp/estudios") return rol === "director";
     if (item.href === "/erp/actividad") return rol === "director";
     if (rol === "administrativo") {
-      const adminAllowed = ["/erp", "/erp/turnos", "/erp/clientes", "/erp/honorarios", "/erp/mensajes", "/erp/perfil", "/erp/configuracion"];
+      const adminAllowed = ["/erp", "/erp/turnos", "/erp/calendario", "/erp/clientes", "/erp/honorarios", "/erp/mensajes", "/erp/perfil", "/erp/configuracion"];
       return adminAllowed.includes(item.href);
     }
     return true;

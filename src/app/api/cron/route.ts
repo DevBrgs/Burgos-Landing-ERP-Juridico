@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { sendEmail, emailAudienciaProxima, emailTareaVencimiento } from "@/lib/email";
+import { sendEmail, emailAudienciaProxima, emailTareaVencimiento, emailTurnoRecordatorio } from "@/lib/email";
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -63,12 +63,44 @@ export async function GET() {
       }
     }
 
+    // 3. Turnos de mañana — recordar al cliente si tiene email
+    const { data: turnos } = await supabase
+      .from("turnos")
+      .select("*, clientes:cliente_id(nombre, email), abogados:abogado_id(nombre)")
+      .in("estado", ["pendiente", "confirmado"])
+      .eq("fecha", mananaStr);
+
+    let turnosNotificados = 0;
+    if (turnos) {
+      for (const turno of turnos) {
+        const cliente = (turno as any).clientes;
+        const abogado = (turno as any).abogados;
+        const emailDest = cliente?.email || null;
+        const nombreCliente = cliente?.nombre || turno.nombre_externo || "Cliente";
+        const nombreAbogado = abogado?.nombre || "el estudio";
+
+        if (emailDest) {
+          await sendEmail({
+            to: emailDest,
+            subject: `Recordatorio: turno mañana ${turno.hora?.slice(0, 5) || ""} - Burgos & Asociados`,
+            html: emailTurnoRecordatorio(nombreCliente, turno.fecha, turno.hora?.slice(0, 5) || "", nombreAbogado, turno.motivo || ""),
+          });
+          alertasEnviadas++;
+          turnosNotificados++;
+        } else {
+          console.log(`[Cron] Turno ${turno.id} sin email de cliente, omitido.`);
+        }
+      }
+    }
+
     return NextResponse.json({
       message: `Alertas procesadas: ${alertasEnviadas} enviadas`,
       audiencias: audiencias?.length || 0,
       tareas: tareas?.length || 0,
+      turnos: turnosNotificados,
     });
   } catch (error) {
+    console.error("[Cron] Error:", error);
     return NextResponse.json({ error: "Error en cron" }, { status: 500 });
   }
 }

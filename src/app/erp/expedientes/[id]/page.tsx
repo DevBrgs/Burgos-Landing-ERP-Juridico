@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -13,6 +13,11 @@ import {
   Save,
   X,
   UserPlus,
+  Play,
+  Square,
+  Download,
+  Sparkles,
+  Timer,
 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -46,6 +51,15 @@ interface Documento {
   creado_en: string;
 }
 
+interface TimerEntry {
+  id: string;
+  descripcion: string | null;
+  inicio: string;
+  fin: string | null;
+  duracion_minutos: number | null;
+  creado_en: string;
+}
+
 const estadoLabels: Record<string, string> = {
   activo: "Activo",
   en_espera: "En espera",
@@ -65,20 +79,178 @@ export default function ExpedienteDetallePage() {
   const [editando, setEditando] = useState(false);
   const supabase = createClient();
 
+  // Timer state
+  const [timerActivo, setTimerActivo] = useState(false);
+  const [timerInicio, setTimerInicio] = useState<Date | null>(null);
+  const [timerSegundos, setTimerSegundos] = useState(0);
+  const [timers, setTimers] = useState<TimerEntry[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Resumen IA state
+  const [resumen, setResumen] = useState<string | null>(null);
+  const [resumenLoading, setResumenLoading] = useState(false);
+  const [showResumen, setShowResumen] = useState(false);
+
   useEffect(() => {
     const fetch = async () => {
-      const [expRes, actRes, docRes] = await Promise.all([
+      const [expRes, actRes, docRes, timerRes] = await Promise.all([
         supabase.from("expedientes").select("*").eq("id", id).single(),
         supabase.from("actuaciones").select("*").eq("expediente_id", id).order("fecha", { ascending: false }),
         supabase.from("documentos").select("*").eq("expediente_id", id).order("creado_en", { ascending: false }),
+        supabase.from("timers").select("*").eq("expediente_id", id).order("creado_en", { ascending: false }),
       ]);
       if (expRes.data) setExpediente(expRes.data);
       if (actRes.data) setActuaciones(actRes.data);
       if (docRes.data) setDocumentos(docRes.data);
+      if (timerRes.data) setTimers(timerRes.data);
       setLoading(false);
     };
     fetch();
   }, [id]);
+
+  // Timer logic
+  useEffect(() => {
+    if (timerActivo && timerInicio) {
+      timerRef.current = setInterval(() => {
+        setTimerSegundos(Math.floor((Date.now() - timerInicio.getTime()) / 1000));
+      }, 1000);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [timerActivo, timerInicio]);
+
+  const iniciarTimer = () => {
+    setTimerInicio(new Date());
+    setTimerSegundos(0);
+    setTimerActivo(true);
+  };
+
+  const detenerTimer = async () => {
+    if (!timerInicio) return;
+    setTimerActivo(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    const fin = new Date();
+    const duracion = Math.round((fin.getTime() - timerInicio.getTime()) / 60000);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: abogado } = await supabase.from("abogados").select("id").eq("user_id", user.id).single();
+
+    await supabase.from("timers").insert({
+      abogado_id: abogado?.id,
+      expediente_id: id,
+      descripcion: `Trabajo en expediente`,
+      inicio: timerInicio.toISOString(),
+      fin: fin.toISOString(),
+      duracion_minutos: duracion || 1,
+    });
+
+    const { data } = await supabase.from("timers").select("*").eq("expediente_id", id).order("creado_en", { ascending: false });
+    if (data) setTimers(data);
+    setTimerInicio(null);
+    setTimerSegundos(0);
+  };
+
+  const formatTimer = (s: number) => {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  };
+
+  // Resumen IA
+  const generarResumen = async () => {
+    setResumenLoading(true);
+    setShowResumen(true);
+    try {
+      const textoActuaciones = actuaciones.map((a) => `- ${a.fecha}: ${a.titulo}${a.descripcion ? ` — ${a.descripcion}` : ""}`).join("\n");
+      const prompt = `Sos un abogado argentino. Resumí el siguiente expediente de forma concisa y profesional. Carátula: "${expediente?.caratula}". Fuero: ${expediente?.fuero || "N/A"}. Juzgado: ${expediente?.juzgado || "N/A"}. Estado: ${expediente?.estado}.\n\nActuaciones:\n${textoActuaciones || "Sin actuaciones registradas."}\n\nGenerá un resumen ejecutivo del caso en 3-5 párrafos.`;
+
+      // Get abogado id for private chat
+      const { data: { user } } = await supabase.auth.getUser();
+      let abogadoId = "";
+      if (user) {
+        const { data: abogado } = await supabase.from("abogados").select("id").eq("user_id", user.id).single();
+        if (abogado) abogadoId = abogado.id;
+      }
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: prompt, abogadoId, tipo: "privado" }),
+      });
+      const data = await res.json();
+      setResumen(data.reply || "No se pudo generar el resumen.");
+    } catch {
+      setResumen("Error al generar el resumen. Intentá nuevamente.");
+    }
+    setResumenLoading(false);
+  };
+
+  // PDF
+  const generarPDF = async () => {
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+
+    const doc = new jsPDF();
+    const gold = [201, 168, 76] as [number, number, number];
+
+    // Header
+    doc.setFontSize(18);
+    doc.setTextColor(...gold);
+    doc.text("Burgos & Asociados", 14, 20);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text("Reporte de Expediente", 14, 27);
+
+    // Carátula
+    doc.setFontSize(14);
+    doc.setTextColor(30);
+    doc.text(expediente?.caratula || "", 14, 40);
+
+    doc.setFontSize(10);
+    doc.setTextColor(80);
+    let y = 50;
+    if (expediente?.numero) { doc.text(`Número: ${expediente.numero}`, 14, y); y += 6; }
+    if (expediente?.fuero) { doc.text(`Fuero: ${expediente.fuero}`, 14, y); y += 6; }
+    if (expediente?.juzgado) { doc.text(`Juzgado: ${expediente.juzgado}`, 14, y); y += 6; }
+    doc.text(`Estado: ${estadoLabels[expediente?.estado || "activo"]}`, 14, y); y += 12;
+
+    // Actuaciones
+    if (actuaciones.length > 0) {
+      doc.setFontSize(12);
+      doc.setTextColor(...gold);
+      doc.text("Actuaciones", 14, y); y += 4;
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Fecha", "Título", "Descripción"]],
+        body: actuaciones.map((a) => [a.fecha, a.titulo, a.descripcion || ""]),
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: gold },
+      });
+
+      y = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Documentos
+    if (documentos.length > 0) {
+      if (y > 250) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setTextColor(...gold);
+      doc.text("Documentos", 14, y); y += 4;
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Nombre", "Tipo", "Fecha"]],
+        body: documentos.map((d) => [d.nombre, d.tipo || "-", new Date(d.creado_en).toLocaleDateString()]),
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: gold },
+      });
+    }
+
+    doc.save(`expediente-${expediente?.numero || id}.pdf`);
+  };
 
   const updateEstado = async (estado: string) => {
     await supabase.from("expedientes").update({ estado }).eq("id", id);
@@ -129,6 +301,34 @@ export default function ExpedienteDetallePage() {
             ))}
           </select>
         </div>
+      </motion.div>
+
+      {/* Action buttons: Timer, Resumen IA, PDF */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="flex flex-wrap gap-3">
+        {/* Timer */}
+        {!timerActivo ? (
+          <button onClick={iniciarTimer} className="inline-flex items-center gap-2 px-4 py-2 bg-burgos-dark border border-burgos-gray-800 rounded-xl text-sm text-burgos-white hover:border-burgos-gold/40 transition-colors">
+            <Play size={14} className="text-green-400" />
+            Iniciar Timer
+          </button>
+        ) : (
+          <button onClick={detenerTimer} className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-xl text-sm text-red-300 hover:bg-red-500/20 transition-colors">
+            <Square size={14} />
+            Detener {formatTimer(timerSegundos)}
+          </button>
+        )}
+
+        {/* Resumen IA */}
+        <button onClick={generarResumen} disabled={resumenLoading} className="inline-flex items-center gap-2 px-4 py-2 bg-burgos-dark border border-burgos-gray-800 rounded-xl text-sm text-burgos-white hover:border-purple-500/40 transition-colors disabled:opacity-50">
+          <Sparkles size={14} className="text-purple-400" />
+          {resumenLoading ? "Generando..." : "Resumir caso"}
+        </button>
+
+        {/* PDF */}
+        <button onClick={generarPDF} className="inline-flex items-center gap-2 px-4 py-2 bg-burgos-dark border border-burgos-gray-800 rounded-xl text-sm text-burgos-white hover:border-burgos-gold/40 transition-colors">
+          <Download size={14} className="text-burgos-gold" />
+          Descargar PDF
+        </button>
       </motion.div>
 
       {/* Info cards */}
@@ -230,6 +430,52 @@ export default function ExpedienteDetallePage() {
           </div>
         )}
       </motion.div>
+
+      {/* Timer entries */}
+      {timers.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6">
+          <h2 className="text-sm font-semibold text-burgos-white flex items-center gap-2 mb-4">
+            <Timer size={16} className="text-burgos-gold" />
+            Registro de Horas ({timers.length})
+          </h2>
+          <div className="space-y-2">
+            {timers.map((t) => (
+              <div key={t.id} className="flex items-center justify-between p-3 bg-burgos-dark-2 rounded-xl border border-burgos-gray-800">
+                <div>
+                  <p className="text-sm text-burgos-white">{t.descripcion || "Trabajo registrado"}</p>
+                  <p className="text-[10px] text-burgos-gray-600">{new Date(t.inicio).toLocaleString("es-AR")}</p>
+                </div>
+                <span className="text-sm font-mono text-burgos-gold">{t.duracion_minutos} min</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Resumen IA Modal */}
+      {showResumen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowResumen(false)} />
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-burgos-white flex items-center gap-2">
+                <Sparkles size={18} className="text-purple-400" />
+                Resumen del Caso
+              </h2>
+              <button onClick={() => setShowResumen(false)} className="text-burgos-gray-600 hover:text-burgos-white"><X size={20} /></button>
+            </div>
+            {resumenLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="prose prose-invert prose-sm max-w-none">
+                <p className="text-sm text-burgos-gray-300 whitespace-pre-wrap leading-relaxed">{resumen}</p>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
 
       {/* Modal nueva actuación */}
       {showActuacion && (

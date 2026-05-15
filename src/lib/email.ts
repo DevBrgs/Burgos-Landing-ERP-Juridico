@@ -106,3 +106,21 @@ export function emailTareaVencimiento(abogado: string, titulo: string, vence: st
     </div>
   `;
 }
+
+export function emailTurnoRecordatorio(nombre: string, fecha: string, hora: string, abogado: string, motivo: string) {
+  return `
+    <div style="font-family: system-ui; max-width: 500px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #c9a84c;">📅 Recordatorio de turno</h2>
+      <p>Hola ${nombre},</p>
+      <p>Te recordamos que tenés un turno <strong>mañana</strong>:</p>
+      <div style="background: #f5f5f7; padding: 16px; border-radius: 12px; margin: 16px 0;">
+        <p style="margin: 4px 0;"><strong>Fecha:</strong> ${fecha}</p>
+        <p style="margin: 4px 0;"><strong>Hora:</strong> ${hora}</p>
+        <p style="margin: 4px 0;"><strong>Profesional:</strong> ${abogado}</p>
+        ${motivo ? `<p style="margin: 4px 0;"><strong>Motivo:</strong> ${motivo}</p>` : ""}
+      </div>
+      <p>Te esperamos en Av. Corrientes 1234, Piso 8, CABA.</p>
+      <p style="color: #888; font-size: 12px;">Burgos & Asociados — Estudio Jurídico</p>
+    </div>
+  `;
+}

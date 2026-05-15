@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "hoffpmgpewhkmmbavhzz.supabase.co",
       },
+      {
+        protocol: "https",
+        hostname: "chart.googleapis.com",
+      },
     ],
   },
   // Headers de seguridad
