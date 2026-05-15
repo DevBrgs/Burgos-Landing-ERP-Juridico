@@ -19,7 +19,7 @@ test.describe("ERP - Dashboard", () => {
     await loginAsAdmin(page);
     await expect(page.locator("text=Expedientes activos")).toBeVisible();
     await expect(page.locator("text=Turnos hoy")).toBeVisible();
-    await expect(page.locator("text=Tareas pendientes")).toBeVisible();
+    await expect(page.getByText("Tareas pendientes", { exact: true })).toBeVisible();
   });
 });
 
@@ -51,9 +51,9 @@ test.describe("ERP - Tareas", () => {
     await loginAsAdmin(page);
     await page.goto("/erp/tareas");
     await expect(page.locator("h1")).toContainText("Tareas");
-    await expect(page.locator("text=Pendientes")).toBeVisible();
-    await expect(page.locator("text=En curso")).toBeVisible();
-    await expect(page.locator("text=Completadas")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Pendientes/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /En curso/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Completadas/ })).toBeVisible();
   });
 });
 

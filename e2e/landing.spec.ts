@@ -13,9 +13,9 @@ test.describe("Landing pública", () => {
 
   test("navbar tiene links de navegación", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator('a[href="#equipo"]')).toBeVisible();
-    await expect(page.locator('a[href="#areas"]')).toBeVisible();
-    await expect(page.locator('a[href="#contacto"]')).toBeVisible();
+    await expect(page.locator('nav a[href="/#equipo"]')).toBeVisible();
+    await expect(page.locator('nav a[href="/#areas"]')).toBeVisible();
+    await expect(page.locator('nav a[href="/#contacto"]')).toBeVisible();
   });
 
   test("sección de áreas de práctica visible", async ({ page }) => {
