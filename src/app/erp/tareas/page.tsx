@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { CheckSquare, Plus, X, AlertTriangle, Clock, MessageSquare, Paperclip, Users, Tag } from "lucide-react";
+import { CheckSquare, Plus, X, AlertTriangle, Clock, MessageSquare, Paperclip, Users, Tag, Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { FileUpload } from "@/components/ui/FileUpload";
 
@@ -16,7 +16,17 @@ interface Tarea {
   expediente_id: string | null;
   etiquetas: string[];
   subtareas: { texto: string; completada: boolean }[];
+  adjunto_url: string | null;
+  adjunto_nombre: string | null;
   creado_en: string;
+}
+
+interface Comentario {
+  id: string;
+  contenido: string;
+  creado_en: string;
+  autor_id: string;
+  autor_nombre?: string;
 }
 
 const prioridadStyles: Record<string, string> = {
@@ -39,7 +49,6 @@ export default function TareasPage() {
     const { data: abogado } = await supabase.from("abogados").select("id, rol").eq("user_id", user.id).single();
     if (!abogado) { setLoading(false); return; }
 
-    // Todos ven todas las tareas para poder colaborar
     const { data } = await supabase.from("tareas").select("*").order("vence_en", { ascending: true, nullsFirst: false }).order("creado_en", { ascending: false });
     if (data) setTareas(data);
     setLoading(false);
@@ -107,6 +116,8 @@ export default function TareasPage() {
 }
 
 function KanbanColumn({ title, count, color, tareas, onUpdate, onSelect, onToggleSub }: any) {
+  const [expandedComments, setExpandedComments] = useState<string | null>(null);
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <div className="flex items-center gap-2 mb-3">
@@ -118,43 +129,58 @@ function KanbanColumn({ title, count, color, tareas, onUpdate, onSelect, onToggl
           const isVencida = tarea.vence_en && new Date(tarea.vence_en) < new Date() && tarea.estado !== "completada";
           const subtareasTotal = tarea.subtareas?.length || 0;
           const subtareasCompletadas = tarea.subtareas?.filter((s: any) => s.completada).length || 0;
+          const showComments = expandedComments === tarea.id;
 
           return (
-            <div key={tarea.id} className={`bg-burgos-dark rounded-xl border p-4 transition-colors cursor-pointer hover:border-burgos-gold/20 ${isVencida ? "border-red-500/30" : "border-burgos-gray-800"}`} onClick={() => onSelect(tarea)}>
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <h4 className="text-sm text-burgos-white font-medium flex-1">{tarea.titulo}</h4>
-                <span className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full border ${prioridadStyles[tarea.prioridad]}`}>{tarea.prioridad}</span>
-              </div>
-              {tarea.descripcion && <p className="text-xs text-burgos-gray-400 mb-2 line-clamp-2">{tarea.descripcion}</p>}
+            <div key={tarea.id} className={`bg-burgos-dark rounded-xl border p-4 transition-colors ${isVencida ? "border-red-500/30" : "border-burgos-gray-800 hover:border-burgos-gold/20"}`}>
+              <div className="cursor-pointer" onClick={() => onSelect(tarea)}>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <h4 className="text-sm text-burgos-white font-medium flex-1">{tarea.titulo}</h4>
+                  <span className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full border ${prioridadStyles[tarea.prioridad]}`}>{tarea.prioridad}</span>
+                </div>
+                {tarea.descripcion && <p className="text-xs text-burgos-gray-400 mb-2 line-clamp-2">{tarea.descripcion}</p>}
 
-              {/* Subtareas progress */}
-              {subtareasTotal > 0 && (
-                <div className="mb-2">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="flex-1 h-1 bg-burgos-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-burgos-gold rounded-full transition-all" style={{ width: `${(subtareasCompletadas / subtareasTotal) * 100}%` }} />
+                {/* Subtareas progress */}
+                {subtareasTotal > 0 && (
+                  <div className="mb-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="flex-1 h-1 bg-burgos-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-burgos-gold rounded-full transition-all" style={{ width: `${(subtareasCompletadas / subtareasTotal) * 100}%` }} />
+                      </div>
+                      <span className="text-[9px] text-burgos-gray-600">{subtareasCompletadas}/{subtareasTotal}</span>
                     </div>
-                    <span className="text-[9px] text-burgos-gray-600">{subtareasCompletadas}/{subtareasTotal}</span>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Tags */}
-              {tarea.etiquetas && tarea.etiquetas.length > 0 && (
-                <div className="flex gap-1 mb-2 flex-wrap">
-                  {tarea.etiquetas.map((tag: string) => (
-                    <span key={tag} className="text-[8px] px-1.5 py-0.5 bg-burgos-dark-2 border border-burgos-gray-800 rounded text-burgos-gray-400">{tag}</span>
-                  ))}
-                </div>
-              )}
+                {/* Tags */}
+                {tarea.etiquetas && tarea.etiquetas.length > 0 && (
+                  <div className="flex gap-1 mb-2 flex-wrap">
+                    {tarea.etiquetas.map((tag: string) => (
+                      <span key={tag} className="text-[8px] px-1.5 py-0.5 bg-burgos-dark-2 border border-burgos-gray-800 rounded text-burgos-gray-400">{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div className="flex items-center justify-between">
-                {tarea.vence_en && (
-                  <span className={`text-[10px] flex items-center gap-1 ${isVencida ? "text-red-400" : "text-burgos-gray-600"}`}>
-                    {isVencida && <AlertTriangle size={10} />}
-                    <Clock size={10} /> {tarea.vence_en}
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {tarea.vence_en && (
+                    <span className={`text-[10px] flex items-center gap-1 ${isVencida ? "text-red-400" : "text-burgos-gray-600"}`}>
+                      {isVencida && <AlertTriangle size={10} />}
+                      <Clock size={10} /> {tarea.vence_en}
+                    </span>
+                  )}
+                  {/* Attachment indicator */}
+                  {tarea.adjunto_url && (
+                    <a href={tarea.adjunto_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[10px] flex items-center gap-0.5 text-burgos-gold hover:text-burgos-gold-light" title={tarea.adjunto_nombre || "Adjunto"}>
+                      <Paperclip size={10} />
+                    </a>
+                  )}
+                  {/* Comments toggle */}
+                  <button onClick={(e) => { e.stopPropagation(); setExpandedComments(showComments ? null : tarea.id); }} className="text-[10px] flex items-center gap-0.5 text-burgos-gray-600 hover:text-burgos-gold transition-colors">
+                    <MessageSquare size={10} />
+                  </button>
+                </div>
                 <div className="flex gap-1 ml-auto">
                   {tarea.estado === "pendiente" && (
                     <button onClick={(e) => { e.stopPropagation(); onUpdate(tarea.id, "en_curso"); }} className="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-400 rounded-md hover:bg-blue-500/20">Iniciar</button>
@@ -164,6 +190,21 @@ function KanbanColumn({ title, count, color, tareas, onUpdate, onSelect, onToggl
                   )}
                 </div>
               </div>
+
+              {/* Expandable comments section */}
+              <AnimatePresence>
+                {showComments && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <ComentariosTarea tareaId={tarea.id} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}
@@ -172,8 +213,104 @@ function KanbanColumn({ title, count, color, tareas, onUpdate, onSelect, onToggl
   );
 }
 
+function ComentariosTarea({ tareaId }: { tareaId: string }) {
+  const [comentarios, setComentarios] = useState<Comentario[]>([]);
+  const [nuevoComentario, setNuevoComentario] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const supabase = createClient();
+
+  const fetchComentarios = async () => {
+    const { data } = await supabase
+      .from("comentarios")
+      .select("id, contenido, creado_en, autor_id")
+      .eq("entidad", "tarea")
+      .eq("entidad_id", tareaId)
+      .order("creado_en", { ascending: true });
+
+    if (data) {
+      // Fetch author names
+      const autorIds = [...new Set(data.map(c => c.autor_id))];
+      const { data: abogados } = await supabase.from("abogados").select("id, nombre").in("id", autorIds);
+      const nombresMap = new Map(abogados?.map(a => [a.id, a.nombre]) || []);
+
+      setComentarios(data.map(c => ({ ...c, autor_nombre: nombresMap.get(c.autor_id) || "Usuario" })));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchComentarios(); }, [tareaId]);
+
+  const enviarComentario = async () => {
+    if (!nuevoComentario.trim()) return;
+    setSending(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSending(false); return; }
+    const { data: abogado } = await supabase.from("abogados").select("id").eq("user_id", user.id).single();
+    if (!abogado) { setSending(false); return; }
+
+    await supabase.from("comentarios").insert({
+      entidad: "tarea",
+      entidad_id: tareaId,
+      contenido: nuevoComentario.trim(),
+      autor_id: abogado.id,
+    });
+
+    setNuevoComentario("");
+    setSending(false);
+    fetchComentarios();
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-burgos-gray-800">
+      {loading ? (
+        <div className="flex justify-center py-2">
+          <div className="w-4 h-4 border border-burgos-gold/30 border-t-burgos-gold rounded-full animate-spin" />
+        </div>
+      ) : (
+        <>
+          {comentarios.length > 0 && (
+            <div className="space-y-2 mb-2 max-h-32 overflow-y-auto">
+              {comentarios.map((c) => (
+                <div key={c.id} className="text-[10px]">
+                  <span className="text-burgos-gold font-medium">{c.autor_nombre}</span>
+                  <span className="text-burgos-gray-600 ml-1.5">{new Date(c.creado_en).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
+                  <p className="text-burgos-gray-400 mt-0.5">{c.contenido}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {comentarios.length === 0 && (
+            <p className="text-[10px] text-burgos-gray-600 mb-2">Sin comentarios aún</p>
+          )}
+          <div className="flex gap-1.5">
+            <input
+              type="text"
+              value={nuevoComentario}
+              onChange={(e) => setNuevoComentario(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") enviarComentario(); }}
+              placeholder="Escribir comentario..."
+              className="flex-1 px-2.5 py-1.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-lg text-[10px] text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40"
+            />
+            <button
+              onClick={enviarComentario}
+              disabled={sending || !nuevoComentario.trim()}
+              className="px-2 py-1.5 bg-burgos-gold/10 text-burgos-gold border border-burgos-gold/20 rounded-lg hover:bg-burgos-gold/20 disabled:opacity-40 transition-colors"
+            >
+              <Send size={10} />
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function NuevaTareaModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [form, setForm] = useState({ titulo: "", descripcion: "", prioridad: "normal", vence_en: "", asignado_a: "", etiquetas: "", subtareas: "" });
+  const [adjuntoUrl, setAdjuntoUrl] = useState("");
+  const [adjuntoNombre, setAdjuntoNombre] = useState("");
   const [loading, setLoading] = useState(false);
   const [abogados, setAbogados] = useState<{ id: string; nombre: string }[]>([]);
   const supabase = createClient();
@@ -207,6 +344,8 @@ function NuevaTareaModal({ onClose, onSuccess }: { onClose: () => void; onSucces
       vence_en: form.vence_en || null,
       etiquetas: etiquetasArr,
       subtareas: subtareasArr,
+      adjunto_url: adjuntoUrl || null,
+      adjunto_nombre: adjuntoNombre || null,
     });
 
     setLoading(false);
@@ -258,6 +397,28 @@ function NuevaTareaModal({ onClose, onSuccess }: { onClose: () => void; onSucces
           <div>
             <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Etiquetas (separadas por coma)</label>
             <input type="text" value={form.etiquetas} onChange={(e) => setForm({ ...form, etiquetas: e.target.value })} placeholder="urgente, civil, García" className="w-full px-4 py-2.5 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl text-burgos-white placeholder:text-burgos-gray-600 focus:outline-none focus:border-burgos-gold/40 text-sm" />
+          </div>
+          {/* File attachment */}
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Adjunto</label>
+            {adjuntoUrl ? (
+              <div className="flex items-center gap-2 px-3 py-2 bg-burgos-black/50 border border-burgos-gray-800 rounded-xl">
+                <Paperclip size={12} className="text-burgos-gold" />
+                <span className="text-xs text-burgos-white flex-1 truncate">{adjuntoNombre}</span>
+                <button type="button" onClick={() => { setAdjuntoUrl(""); setAdjuntoNombre(""); }} className="text-burgos-gray-600 hover:text-red-400">
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <FileUpload
+                bucket="expedientes-docs"
+                folder="tareas"
+                accept=".pdf,.doc,.docx,.jpg,.png,.xls,.xlsx"
+                onUpload={(url, fileName) => { setAdjuntoUrl(url); setAdjuntoNombre(fileName); }}
+                label="Adjuntar archivo"
+                compact
+              />
+            )}
           </div>
           <button type="submit" disabled={loading} className="w-full bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black py-3 rounded-xl font-semibold transition-all">
             {loading ? "Creando..." : "Crear Tarea"}
