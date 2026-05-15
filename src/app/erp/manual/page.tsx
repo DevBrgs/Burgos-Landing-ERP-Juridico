@@ -305,7 +305,7 @@ export default function ManualPage() {
                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all duration-200 border ${
                   isOpen
                     ? "bg-burgos-gold/5 border-burgos-gold/20 text-burgos-gold"
-                    : "bg-burgos-dark border-burgos-gray-800 text-burgos-gray-300 hover:border-burgos-gray-700 hover:text-burgos-white"
+                    : "bg-burgos-dark border-burgos-gray-800 text-burgos-white hover:border-burgos-gray-700"
                 }`}
               >
                 <Icon size={18} className={isOpen ? "text-burgos-gold" : "text-burgos-gray-500"} />
@@ -326,7 +326,7 @@ export default function ManualPage() {
                     className="overflow-hidden"
                   >
                     <div className="px-4 py-4 ml-4 mt-1 border-l-2 border-burgos-gold/20">
-                      <p className="text-sm text-burgos-gray-300 leading-relaxed whitespace-pre-line">
+                      <p className="text-sm text-burgos-gray-400 leading-relaxed whitespace-pre-line">
                         {seccion.contenido}
                       </p>
                     </div>
