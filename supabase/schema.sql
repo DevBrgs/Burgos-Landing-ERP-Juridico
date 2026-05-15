@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS documentos (
   url TEXT NOT NULL,
   tamano_bytes BIGINT,
   version INT DEFAULT 1,
+  visible_cliente BOOLEAN NOT NULL DEFAULT false,
   subido_por UUID REFERENCES abogados(id) ON DELETE SET NULL,
   creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

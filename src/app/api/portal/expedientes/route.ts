@@ -8,7 +8,7 @@ function getSupabase() {
   );
 }
 
-// GET: Expedientes del cliente
+// GET: Expedientes del cliente con documentos compartidos
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
 
     const supabase = getSupabase();
 
-    const { data, error } = await supabase
+    // Fetch expedientes
+    const { data: expedientes, error } = await supabase
       .from("expedientes")
       .select("id, caratula, numero, fuero, juzgado, estado, creado_en")
       .eq("cliente_id", clienteId)
@@ -30,7 +31,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data || []);
+    // Fetch shared documents for each expediente
+    const expedientesConDocs = await Promise.all(
+      (expedientes || []).map(async (exp) => {
+        const { data: docs } = await supabase
+          .from("documentos")
+          .select("id, nombre, tipo, url, creado_en")
+          .eq("expediente_id", exp.id)
+          .eq("visible_cliente", true)
+          .order("creado_en", { ascending: false });
+
+        return { ...exp, documentos: docs || [] };
+      })
+    );
+
+    return NextResponse.json(expedientesConDocs);
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }

@@ -345,6 +345,30 @@ function PortalDashboard({ session, onLogout }: { session: ClienteSession; onLog
                         {exp.estado}
                       </span>
                     </div>
+                    {/* Documentos compartidos */}
+                    {exp.documentos && exp.documentos.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-burgos-gray-800/50">
+                        <p className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-2">Documentos compartidos</p>
+                        <div className="space-y-1.5">
+                          {exp.documentos.map((doc: any) => (
+                            <div key={doc.id} className="flex items-center justify-between p-2 bg-burgos-black/30 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <Scale size={12} className="text-burgos-gold" />
+                                <span className="text-xs text-burgos-white">{doc.nombre}</span>
+                              </div>
+                              <a
+                                href={doc.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-burgos-gold hover:text-burgos-gold-light font-medium transition-colors"
+                              >
+                                Descargar
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

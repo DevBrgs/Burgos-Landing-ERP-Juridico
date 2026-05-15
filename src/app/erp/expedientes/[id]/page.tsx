@@ -21,6 +21,8 @@ import {
   TrendingUp,
   DollarSign,
   User,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -53,6 +55,7 @@ interface Documento {
   tipo: string | null;
   url: string;
   creado_en: string;
+  visible_cliente: boolean;
 }
 
 interface TimerEntry {
@@ -483,12 +486,17 @@ export default function ExpedienteDetallePage() {
 
       {/* Documentos adjuntos */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-semibold text-burgos-white flex items-center gap-2">
             <FileText size={16} className="text-burgos-gold" />
             Documentos ({documentos.length})
           </h2>
         </div>
+        {expediente.cliente_id && (
+          <p className="text-[10px] text-burgos-gray-600 mb-4 flex items-center gap-1">
+            <Eye size={10} /> = visible para el cliente en su portal · <EyeOff size={10} /> = solo visible internamente
+          </p>
+        )}
 
         <FileUpload
           bucket="expedientes-docs"
@@ -522,14 +530,31 @@ export default function ExpedienteDetallePage() {
                     <p className="text-[10px] text-burgos-gray-600">{new Date(doc.creado_en).toLocaleDateString()}</p>
                   </div>
                 </div>
-                <a
-                  href={doc.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-burgos-gold hover:text-burgos-gold-light transition-colors"
-                >
-                  Descargar
-                </a>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      const newVal = !doc.visible_cliente;
+                      await supabase.from("documentos").update({ visible_cliente: newVal }).eq("id", doc.id);
+                      setDocumentos(prev => prev.map(d => d.id === doc.id ? { ...d, visible_cliente: newVal } : d));
+                    }}
+                    className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${
+                      doc.visible_cliente
+                        ? "bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20"
+                        : "bg-burgos-dark border-burgos-gray-800 text-burgos-gray-600 hover:border-burgos-gray-600 hover:text-burgos-gray-400"
+                    }`}
+                    title={doc.visible_cliente ? "Visible para el cliente — click para ocultar" : "Oculto para el cliente — click para compartir"}
+                  >
+                    {doc.visible_cliente ? <Eye size={12} /> : <EyeOff size={12} />}
+                  </button>
+                  <a
+                    href={doc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-burgos-gold hover:text-burgos-gold-light transition-colors"
+                  >
+                    Descargar
+                  </a>
+                </div>
               </div>
             ))}
           </div>
