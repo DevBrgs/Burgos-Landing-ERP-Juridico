@@ -83,6 +83,7 @@ export function NewsletterSection() {
     const fetchPosts = async () => {
       try {
         const res = await fetch("/api/newsletter?limit=5");
+        if (!res.ok) return;
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setPublicaciones(data.map((p: any, i: number) => ({
@@ -90,7 +91,7 @@ export function NewsletterSection() {
             titulo: p.titulo,
             resumen: p.resumen || "",
             categoria: p.categoria,
-            autor: p.abogados?.nombre || "Equipo Burgos",
+            autor: "Equipo Burgos",
             fecha: p.publicado_en ? new Date(p.publicado_en).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" }) : "",
             destacado: i === 0,
             imagen: p.imagen_url || publicacionesPlaceholder[i % publicacionesPlaceholder.length]?.imagen || "",

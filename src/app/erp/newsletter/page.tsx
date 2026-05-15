@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Newspaper, Plus, X, Eye, Edit, Globe, FileText } from "lucide-react";
+import { Newspaper, Plus, X, Globe, Pencil, Trash2, Image as ImageIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { FileUpload } from "@/components/ui/FileUpload";
 
@@ -10,6 +10,7 @@ interface Post {
   id: string;
   titulo: string;
   resumen: string | null;
+  cuerpo: string | null;
   categoria: string;
   estado: string;
   imagen_url: string | null;
@@ -29,6 +30,8 @@ export default function NewsletterERPPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [deletingPost, setDeletingPost] = useState<Post | null>(null);
   const supabase = createClient();
 
   const fetchPosts = async () => {
@@ -42,6 +45,7 @@ export default function NewsletterERPPage() {
 
   useEffect(() => {
     fetchPosts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const publicar = async (id: string) => {
@@ -51,6 +55,12 @@ export default function NewsletterERPPage() {
 
   const archivar = async (id: string) => {
     await supabase.from("posts").update({ estado: "archivado" }).eq("id", id);
+    fetchPosts();
+  };
+
+  const eliminar = async (id: string) => {
+    await supabase.from("posts").delete().eq("id", id);
+    setDeletingPost(null);
     fetchPosts();
   };
 
@@ -71,7 +81,7 @@ export default function NewsletterERPPage() {
           </p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => { setEditingPost(null); setShowModal(true); }}
           className="inline-flex items-center gap-2 bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300"
         >
           <Plus size={16} />
@@ -83,29 +93,62 @@ export default function NewsletterERPPage() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-3">
         {posts.map((post) => (
           <div key={post.id} className="bg-burgos-dark rounded-xl border border-burgos-gray-800 hover:border-burgos-gold/20 p-5 transition-colors">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-start gap-4">
+              {/* Thumbnail */}
+              {post.imagen_url && (
+                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-burgos-gray-800">
+                  <img src={post.imagen_url} alt="" className="w-full h-full object-cover" />
+                </div>
+              )}
+              {!post.imagen_url && (
+                <div className="w-16 h-16 rounded-lg flex-shrink-0 border border-burgos-gray-800 flex items-center justify-center bg-burgos-black/30">
+                  <ImageIcon size={20} className="text-burgos-gray-700" />
+                </div>
+              )}
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
                   <span className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full border ${estadoStyles[post.estado]}`}>
                     {post.estado}
                   </span>
                   <span className="text-[10px] text-burgos-gray-600">{post.categoria}</span>
                 </div>
                 <h3 className="text-sm font-semibold text-burgos-white mb-1">{post.titulo}</h3>
-                {post.resumen && <p className="text-xs text-burgos-gray-400 line-clamp-2">{post.resumen}</p>}
+                {post.resumen && (
+                  <p className="text-xs text-burgos-gray-400 line-clamp-2">
+                    {post.resumen.length > 100 ? post.resumen.slice(0, 100) + "..." : post.resumen}
+                  </p>
+                )}
                 <p className="text-[10px] text-burgos-gray-600 mt-2">
                   {post.publicado_en ? `Publicado: ${new Date(post.publicado_en).toLocaleDateString()}` : `Creado: ${new Date(post.creado_en).toLocaleDateString()}`}
                 </p>
               </div>
-              <div className="flex gap-1">
+
+              {/* Actions */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={() => { setEditingPost(post); setShowModal(true); }}
+                  className="p-2 rounded-lg text-burgos-gray-400 hover:text-burgos-gold hover:bg-burgos-gold/10 transition-colors"
+                  title="Editar"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  onClick={() => setDeletingPost(post)}
+                  className="p-2 rounded-lg text-burgos-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  title="Eliminar"
+                >
+                  <Trash2 size={14} />
+                </button>
                 {post.estado === "borrador" && (
-                  <button onClick={() => publicar(post.id)} className="text-[10px] px-3 py-1.5 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg hover:bg-green-500/20 transition-colors flex items-center gap-1">
+                  <button onClick={() => publicar(post.id)} className="text-[10px] px-3 py-1.5 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg hover:bg-green-500/20 transition-colors flex items-center gap-1 ml-1">
                     <Globe size={10} />
                     Publicar
                   </button>
                 )}
                 {post.estado === "publicado" && (
-                  <button onClick={() => archivar(post.id)} className="text-[10px] px-3 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-lg hover:bg-amber-500/20 transition-colors">
+                  <button onClick={() => archivar(post.id)} className="text-[10px] px-3 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-lg hover:bg-amber-500/20 transition-colors ml-1">
                     Archivar
                   </button>
                 )}
@@ -128,15 +171,37 @@ export default function NewsletterERPPage() {
         </div>
       )}
 
+      {/* Create / Edit Modal */}
       {showModal && (
-        <NuevoPostModal onClose={() => setShowModal(false)} onSuccess={() => { setShowModal(false); fetchPosts(); }} />
+        <PostFormModal
+          post={editingPost}
+          onClose={() => { setShowModal(false); setEditingPost(null); }}
+          onSuccess={() => { setShowModal(false); setEditingPost(null); fetchPosts(); }}
+        />
+      )}
+
+      {/* Delete Confirmation */}
+      {deletingPost && (
+        <DeleteConfirmModal
+          post={deletingPost}
+          onClose={() => setDeletingPost(null)}
+          onConfirm={() => eliminar(deletingPost.id)}
+        />
       )}
     </div>
   );
 }
 
-function NuevoPostModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ titulo: "", cuerpo: "", resumen: "", categoria: "General", imagen_url: "" });
+/* ─── Post Form Modal (Create & Edit) ─── */
+function PostFormModal({ post, onClose, onSuccess }: { post: Post | null; onClose: () => void; onSuccess: () => void }) {
+  const isEditing = !!post;
+  const [form, setForm] = useState({
+    titulo: post?.titulo || "",
+    cuerpo: post?.cuerpo || "",
+    resumen: post?.resumen || "",
+    categoria: post?.categoria || "General",
+    imagen_url: post?.imagen_url || "",
+  });
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
@@ -144,19 +209,31 @@ function NuevoPostModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
     e.preventDefault();
     setLoading(true);
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: abogado } = await supabase.from("abogados").select("id").eq("user_id", user.id).single();
-    if (!abogado) return;
+    if (isEditing) {
+      // UPDATE
+      await supabase.from("posts").update({
+        titulo: form.titulo,
+        cuerpo: form.cuerpo,
+        resumen: form.resumen || null,
+        categoria: form.categoria,
+        imagen_url: form.imagen_url || null,
+      }).eq("id", post.id);
+    } else {
+      // INSERT
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+      const { data: abogado } = await supabase.from("abogados").select("id").eq("user_id", user.id).single();
+      if (!abogado) { setLoading(false); return; }
 
-    await supabase.from("posts").insert({
-      autor_id: abogado.id,
-      titulo: form.titulo,
-      cuerpo: form.cuerpo,
-      resumen: form.resumen || null,
-      categoria: form.categoria,
-      imagen_url: form.imagen_url || null,
-    });
+      await supabase.from("posts").insert({
+        autor_id: abogado.id,
+        titulo: form.titulo,
+        cuerpo: form.cuerpo,
+        resumen: form.resumen || null,
+        categoria: form.categoria,
+        imagen_url: form.imagen_url || null,
+      });
+    }
 
     setLoading(false);
     onSuccess();
@@ -167,7 +244,9 @@ function NuevoPostModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-burgos-white">Nueva Publicación</h2>
+          <h2 className="text-lg font-bold text-burgos-white">
+            {isEditing ? "Editar Publicación" : "Nueva Publicación"}
+          </h2>
           <button onClick={onClose} className="text-burgos-gray-600 hover:text-burgos-white"><X size={20} /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -201,13 +280,63 @@ function NuevoPostModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                 compact
                 onUpload={(url) => setForm({ ...form, imagen_url: url })}
               />
-              {form.imagen_url && <p className="text-[9px] text-green-400 mt-1">✓ Imagen cargada</p>}
+              {form.imagen_url && (
+                <div className="mt-2 flex items-center gap-2">
+                  <img src={form.imagen_url} alt="" className="w-8 h-8 rounded object-cover border border-burgos-gray-800" />
+                  <p className="text-[9px] text-green-400">✓ Imagen cargada</p>
+                </div>
+              )}
             </div>
           </div>
           <button type="submit" disabled={loading} className="w-full bg-burgos-gold hover:bg-burgos-gold-light disabled:bg-burgos-gold/30 text-burgos-black py-3 rounded-xl font-semibold transition-all duration-300">
-            {loading ? "Guardando..." : "Guardar como borrador"}
+            {loading ? "Guardando..." : isEditing ? "Guardar cambios" : "Guardar como borrador"}
           </button>
         </form>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ─── Delete Confirmation Modal ─── */
+function DeleteConfirmModal({ post, onClose, onConfirm }: { post: Post; onClose: () => void; onConfirm: () => void }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    await onConfirm();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 sm:p-8 w-full max-w-sm">
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
+            <Trash2 size={20} className="text-red-400" />
+          </div>
+          <h3 className="text-lg font-bold text-burgos-white mb-2">Eliminar publicación</h3>
+          <p className="text-sm text-burgos-gray-400 mb-1">
+            ¿Estás seguro de que querés eliminar esta publicación?
+          </p>
+          <p className="text-sm text-burgos-white font-medium mb-6 line-clamp-2">
+            &ldquo;{post.titulo}&rdquo;
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 border border-burgos-gray-800 text-burgos-gray-400 rounded-xl hover:bg-burgos-gray-800/30 transition-colors text-sm font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/30 transition-colors text-sm font-medium disabled:opacity-50"
+            >
+              {loading ? "Eliminando..." : "Eliminar"}
+            </button>
+          </div>
+        </div>
       </motion.div>
     </div>
   );

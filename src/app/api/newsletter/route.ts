@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from("posts")
-      .select("id, titulo, resumen, categoria, imagen_url, publicado_en, autor_id, abogados(nombre)")
+      .select("id, titulo, resumen, categoria, imagen_url, publicado_en, autor_id")
       .eq("estado", "publicado")
       .order("publicado_en", { ascending: false })
       .limit(limit);
