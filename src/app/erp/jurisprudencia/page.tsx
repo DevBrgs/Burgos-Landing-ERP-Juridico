@@ -4,6 +4,13 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Search, Scale, ExternalLink, BookOpen } from "lucide-react";
 
+interface Fuente {
+  nombre: string;
+  descripcion: string;
+  url: string;
+  estado: string;
+}
+
 export default function JurisprudenciaPage() {
   const [query, setQuery] = useState("");
   const [resultados, setResultados] = useState<any>(null);
@@ -31,7 +38,7 @@ export default function JurisprudenciaPage() {
           <BookOpen size={24} className="text-burgos-gold" />
           Búsqueda Jurisprudencial
         </h1>
-        <p className="text-burgos-gray-400 text-sm mt-1">SAIJ · Infojus · Fallos CSJN</p>
+        <p className="text-burgos-gray-400 text-sm mt-1">CSJN · CIJ · SAIJ — Búsqueda orientada por IA</p>
       </motion.div>
 
       {/* Search */}
@@ -51,7 +58,6 @@ export default function JurisprudenciaPage() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-burgos-gray-400">
               Fuente: <span className="text-burgos-gold">{resultados.fuente}</span>
-              {resultados.total && ` · ${resultados.total} resultados`}
             </p>
           </div>
 
@@ -70,8 +76,39 @@ export default function JurisprudenciaPage() {
             </div>
           )}
 
-          {/* Link a SAIJ prominente */}
-          {resultados.url && (
+          {/* Fuentes múltiples */}
+          {resultados.fuentes && resultados.fuentes.length > 0 && (
+            <div className="bg-burgos-dark rounded-xl border border-burgos-gray-800 p-5">
+              <h3 className="text-sm font-semibold text-burgos-white mb-3">Buscar en fuentes oficiales</h3>
+              <div className="flex flex-wrap gap-3">
+                {resultados.fuentes.map((fuente: Fuente, i: number) => (
+                  <a
+                    key={i}
+                    href={fuente.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all border ${
+                      fuente.estado === "activo"
+                        ? "bg-burgos-gold/10 hover:bg-burgos-gold/20 border-burgos-gold/30 text-burgos-gold"
+                        : "bg-burgos-gray-800/50 hover:bg-burgos-gray-800 border-burgos-gray-700 text-burgos-gray-400"
+                    }`}
+                  >
+                    <ExternalLink size={16} />
+                    {fuente.nombre}
+                    {fuente.estado === "inestable" && (
+                      <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-full">inestable</span>
+                    )}
+                  </a>
+                ))}
+              </div>
+              <p className="text-[11px] text-burgos-gray-500 mt-3">
+                ⚠️ SAIJ puede estar temporalmente no disponible. CSJN y CIJ funcionan correctamente.
+              </p>
+            </div>
+          )}
+
+          {/* Fallback: link único (compatibilidad) */}
+          {!resultados.fuentes && resultados.url && (
             <div className="bg-burgos-dark rounded-xl border border-burgos-gray-800 p-5">
               <a
                 href={resultados.url}
@@ -80,37 +117,14 @@ export default function JurisprudenciaPage() {
                 className="inline-flex items-center gap-2 bg-burgos-gold/10 hover:bg-burgos-gold/20 border border-burgos-gold/30 text-burgos-gold px-5 py-3 rounded-xl font-semibold text-sm transition-all"
               >
                 <ExternalLink size={16} />
-                Ver resultados en SAIJ
+                Ver resultados
               </a>
-              <p className="text-[11px] text-burgos-gray-500 mt-3">
-                ⚠️ SAIJ puede estar temporalmente no disponible. Si el enlace no funciona, buscá directamente en{" "}
-                <a href="http://www.saij.gob.ar" target="_blank" rel="noopener noreferrer" className="text-burgos-gold hover:underline">
-                  saij.gob.ar
-                </a>
-              </p>
             </div>
           )}
 
           {resultados.mensaje && (
             <div className="bg-burgos-dark rounded-xl border border-burgos-gray-800 p-5">
               <p className="text-sm text-burgos-gray-400">{resultados.mensaje}</p>
-              {resultados.url && (
-                <a href={resultados.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-burgos-gold mt-2 hover:text-burgos-gold-light">
-                  Buscar directamente <ExternalLink size={14} />
-                </a>
-              )}
-            </div>
-          )}
-
-          {resultados.resultados && resultados.resultados.length > 0 && (
-            <div className="space-y-3">
-              {resultados.resultados.map((r: any, i: number) => (
-                <div key={i} className="bg-burgos-dark rounded-xl border border-burgos-gray-800 hover:border-burgos-gold/20 p-5 transition-colors">
-                  <h3 className="text-sm font-semibold text-burgos-white mb-1">{r.titulo || r.title || `Resultado ${i + 1}`}</h3>
-                  {r.resumen && <p className="text-xs text-burgos-gray-400 line-clamp-3">{r.resumen}</p>}
-                  {r.fecha && <p className="text-[10px] text-burgos-gray-600 mt-2">{r.fecha}</p>}
-                </div>
-              ))}
             </div>
           )}
         </motion.div>
@@ -120,7 +134,7 @@ export default function JurisprudenciaPage() {
         <div className="text-center py-16">
           <Scale size={48} className="text-burgos-gray-800 mx-auto mb-4" />
           <p className="text-burgos-gray-600 text-sm">Buscá jurisprudencia por tema, artículo o carátula.</p>
-          <p className="text-burgos-gray-600 text-xs mt-1">Se consulta SAIJ (Sistema Argentino de Información Jurídica).</p>
+          <p className="text-burgos-gray-600 text-xs mt-1">Se consulta CSJN, CIJ y SAIJ con orientación de IA.</p>
         </div>
       )}
     </div>

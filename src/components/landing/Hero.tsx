@@ -55,13 +55,13 @@ export function Hero() {
 
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(15)].map((_, i) => (
+        {[...Array(20)].map((_, i) => (
           <motion.div
             key={i}
             className={`absolute rounded-full ${i % 3 === 0 ? "w-1.5 h-1.5 bg-burgos-gold/40" : "w-1 h-1 bg-burgos-gold/40"}`}
             style={{
-              left: `${5 + (i * 6.5) % 90}%`,
-              top: `${10 + ((i * 17) % 75)}%`,
+              left: `${5 + (i * 4.7) % 90}%`,
+              top: `${10 + ((i * 13) % 75)}%`,
             }}
             animate={{
               y: [0, -30 - (i % 4) * 10, 0],
@@ -70,7 +70,29 @@ export function Hero() {
             transition={{
               duration: 3.5 + (i % 5),
               repeat: Infinity,
-              delay: i * 0.5,
+              delay: i * 0.4,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+        {/* Second layer: larger, slower particles */}
+        {[...Array(4)].map((_, i) => (
+          <motion.div
+            key={`large-${i}`}
+            className="absolute rounded-full w-2 h-2 bg-burgos-gold/25"
+            style={{
+              left: `${15 + i * 22}%`,
+              top: `${20 + ((i * 23) % 55)}%`,
+            }}
+            animate={{
+              y: [0, -20 - i * 5, 0],
+              x: [0, 10 - i * 5, 0],
+              opacity: [0.15, 0.5, 0.15],
+            }}
+            transition={{
+              duration: 6 + i * 1.5,
+              repeat: Infinity,
+              delay: i * 1.2,
               ease: "easeInOut",
             }}
           />

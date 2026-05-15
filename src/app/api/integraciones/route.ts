@@ -32,7 +32,27 @@ export async function GET(request: NextRequest) {
 
 async function buscarSAIJ(query: string) {
   try {
-    const searchUrl = `https://www.saij.gob.ar/busqueda#/jurisprudencia?q=${encodeURIComponent(query)}`;
+    // Múltiples fuentes de jurisprudencia argentina
+    const fuentes = [
+      {
+        nombre: "CSJN",
+        descripcion: "Corte Suprema de Justicia de la Nación",
+        url: `https://sjconsulta.csjn.gov.ar/sjconsulta/documentos/verDocumentoByIdLinksJSP.html?idDocumento=&texto=${encodeURIComponent(query)}`,
+        estado: "activo",
+      },
+      {
+        nombre: "CIJ",
+        descripcion: "Centro de Información Judicial",
+        url: `https://www.cij.gov.ar/sentencias.html`,
+        estado: "activo",
+      },
+      {
+        nombre: "SAIJ",
+        descripcion: "Sistema Argentino de Información Jurídica",
+        url: `http://www.saij.gob.ar`,
+        estado: "inestable",
+      },
+    ];
 
     // Usar Groq para generar un resumen orientativo sobre la búsqueda jurídica
     let resumen = "";
@@ -41,14 +61,15 @@ async function buscarSAIJ(query: string) {
         messages: [
           {
             role: "system",
-            content: `Sos un asistente jurídico argentino. El usuario busca jurisprudencia en SAIJ sobre un tema. 
+            content: `Sos un asistente jurídico argentino. El usuario busca jurisprudencia sobre un tema. 
 Proporcioná un breve resumen orientativo (3-5 oraciones) sobre qué tipo de resultados podría encontrar, 
-qué leyes o artículos son relevantes, y consejos para refinar la búsqueda en SAIJ. 
+qué leyes o artículos son relevantes, y consejos para refinar la búsqueda. 
+Mencioná que puede buscar en CSJN, CIJ y SAIJ.
 Usá terminología jurídica argentina. Sé conciso y útil.`,
           },
           {
             role: "user",
-            content: `Estoy buscando jurisprudencia sobre: "${query}". ¿Qué puedo esperar encontrar en SAIJ?`,
+            content: `Estoy buscando jurisprudencia sobre: "${query}". ¿Qué puedo esperar encontrar?`,
           },
         ],
         model: "llama-3.1-8b-instant",
@@ -57,24 +78,27 @@ Usá terminología jurídica argentina. Sé conciso y útil.`,
       });
       resumen = completion.choices[0]?.message?.content || "";
     } catch {
-      // Si Groq falla, seguimos sin resumen
       resumen = "";
     }
 
     return NextResponse.json({
-      fuente: "SAIJ",
+      fuente: "Jurisprudencia Argentina",
       query,
-      url: searchUrl,
-      resumen: resumen || `Buscá jurisprudencia sobre "${query}" directamente en SAIJ.`,
-      instrucciones: "Hacé clic en el enlace para ver los resultados en el buscador de SAIJ. Podés filtrar por jurisdicción, fecha y tipo de documento.",
+      fuentes,
+      resumen: resumen || `Buscá jurisprudencia sobre "${query}" en las fuentes oficiales disponibles.`,
+      instrucciones: "Usá los enlaces para buscar en cada fuente. CSJN y CIJ funcionan correctamente. SAIJ puede estar temporalmente inestable.",
     });
   } catch {
     return NextResponse.json({
-      fuente: "SAIJ",
+      fuente: "Jurisprudencia Argentina",
       query,
-      url: `https://www.saij.gob.ar/busqueda#/jurisprudencia?q=${encodeURIComponent(query)}`,
-      resumen: `Buscá jurisprudencia sobre "${query}" directamente en SAIJ.`,
-      instrucciones: "Hacé clic en el enlace para ver los resultados en el buscador de SAIJ.",
+      fuentes: [
+        { nombre: "CSJN", descripcion: "Corte Suprema de Justicia de la Nación", url: `https://sjconsulta.csjn.gov.ar/sjconsulta/`, estado: "activo" },
+        { nombre: "CIJ", descripcion: "Centro de Información Judicial", url: `https://www.cij.gov.ar/sentencias.html`, estado: "activo" },
+        { nombre: "SAIJ", descripcion: "Sistema Argentino de Información Jurídica", url: `http://www.saij.gob.ar`, estado: "inestable" },
+      ],
+      resumen: `Buscá jurisprudencia sobre "${query}" en las fuentes oficiales.`,
+      instrucciones: "Usá los enlaces para buscar en cada fuente.",
     });
   }
 }

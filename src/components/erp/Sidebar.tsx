@@ -25,6 +25,7 @@ import {
   FilePen,
   Building2,
   BookOpen,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -46,7 +47,29 @@ const navItems = [
   { href: "/erp/perfil", label: "Mi Perfil", icon: UserCog },
   { href: "/erp/estudios", label: "Estudios", icon: Building2 },
   { href: "/erp/configuracion", label: "Configuración", icon: Settings },
+  { href: "/erp/manual", label: "Manual", icon: HelpCircle },
 ];
+
+const navItemDescriptions: Record<string, string> = {
+  "/erp": "Resumen general con KPIs y alertas",
+  "/erp/dashboard-director": "Gráficos y métricas del estudio",
+  "/erp/expedientes": "Gestión de casos y legajos",
+  "/erp/turnos": "Agenda de citas y disponibilidad",
+  "/erp/tareas": "Tablero kanban de trabajo",
+  "/erp/audiencias": "Calendario de audiencias judiciales",
+  "/erp/honorarios": "Cobros y facturación",
+  "/erp/mensajes": "Chat con clientes",
+  "/erp/ia": "Asistente jurídico con IA",
+  "/erp/escritos": "Generador de escritos judiciales",
+  "/erp/jurisprudencia": "Búsqueda en CSJN, CIJ, SAIJ",
+  "/erp/newsletter": "Publicaciones del estudio",
+  "/erp/clientes": "Alta y gestión de clientes",
+  "/erp/abogados": "Gestión del equipo",
+  "/erp/perfil": "Tu información y foto",
+  "/erp/estudios": "Gestión multi-estudio",
+  "/erp/configuracion": "Ajustes del sistema",
+  "/erp/manual": "Guía de uso del ERP",
+};
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -109,6 +132,7 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
+              title={navItemDescriptions[item.href] || ""}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                 active
