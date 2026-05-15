@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
@@ -6,8 +6,10 @@ import {
   HelpCircle,
   ChevronDown,
   LayoutDashboard,
+  BarChart3,
   FolderOpen,
   Calendar,
+  CalendarDays,
   CheckSquare,
   Gavel,
   DollarSign,
@@ -20,6 +22,7 @@ import {
   UserPlus,
   UserCog,
   Settings,
+  Globe,
 } from "lucide-react";
 
 interface ManualSection {
@@ -28,54 +31,86 @@ interface ManualSection {
   icon: React.ElementType;
   contenido: string;
 }
-
 const secciones: ManualSection[] = [
   {
     id: "dashboard",
     titulo: "Dashboard",
     icon: LayoutDashboard,
-    contenido: `El Dashboard es la pantalla principal del ERP. Muestra un resumen general del estudio con KPIs clave:
+    contenido: `Pantalla principal del ERP con resumen del estudio:
 
-• Expedientes activos y su estado actual
-• Turnos del día y próximos
-• Tareas pendientes y vencidas
-• Honorarios cobrados vs pendientes
-• Alertas de audiencias próximas
-• Actividad reciente del equipo
+• Saludo personalizado con tu nombre y hora del día
+• KPIs en tiempo real: expedientes activos, turnos hoy, tareas pendientes, clientes
+• Próximas audiencias (próximos 7 días)
+• Tareas por vencer
+• Actividad reciente del sistema
+• Expedientes creados/actualizados recientemente
 
-Los KPIs se actualizan en tiempo real. Podés hacer clic en cualquier tarjeta para ir directamente a la sección correspondiente.`,
+Los datos se actualizan cada vez que entrás al dashboard.`,
+  },
+  {
+    id: "metricas",
+    titulo: "Métricas",
+    icon: BarChart3,
+    contenido: `Gráficos y estadísticas del estudio (visible para todos):
+
+• Gráfico de barras: expedientes por abogado
+• Gráfico de torta: distribución por fuero
+• KPIs globales: total expedientes, abogados activos, cobrado vs pendiente
+• Comparativas mensuales
+
+Los gráficos se generan con datos reales de Supabase usando Recharts.`,
   },
   {
     id: "expedientes",
     titulo: "Expedientes",
     icon: FolderOpen,
-    contenido: `Gestión completa de casos legales del estudio:
+    contenido: `Gestión completa de casos legales:
 
-• Crear nuevos expedientes con carátula, juzgado, fuero y jurisdicción
-• Registrar actuaciones (movimientos procesales) con fecha y descripción
-• Adjuntar documentos a cada expediente (escritos, cédulas, oficios)
-• Asignar abogados responsables
-• Cambiar estado: activo, en trámite, archivado, finalizado
-• Filtrar por cliente, estado, fuero o abogado asignado
-• Compartir expedientes con clientes a través del portal
-
-Cada expediente tiene un historial completo de actuaciones ordenado cronológicamente.`,
-  },
-  {
+• Dos secciones: "Mis Expedientes" (personales) y "Generales" (compartidos)
+• Crear expediente: carátula, número, fuero, juzgado, estado
+• Detección de conflicto de intereses al crear (busca partes repetidas)
+• Vista de detalle con:
+  - Actuaciones (historial cronológico)
+  - Documentos adjuntos (upload drag & drop)
+  - Timer de horas trabajadas (Play/Stop)
+  - Resumen automático con IA ("Resumir caso")
+  - Análisis de plazos con IA ("Analizar plazos")
+  - Análisis de probabilidad con IA
+  - Descargar reporte PDF completo
+• Cambiar estado: activo, en espera, cerrado, archivado
+• Filtros por estado, búsqueda por carátula o número`,
+  },  {
     id: "turnos",
     titulo: "Turnos",
     icon: Calendar,
-    contenido: `Agenda de citas y gestión de disponibilidad:
+    contenido: `Gestión de agenda y citas:
 
-• Calendario visual con vista diaria, semanal y mensual
-• Configurar horarios de disponibilidad por abogado
-• Los clientes pueden reservar turnos desde el portal público
-• Confirmación automática o manual de turnos
-• Recordatorios por email antes de la cita
-• Cancelar o reprogramar turnos
-• Ver historial de turnos por cliente
+• Vista lista: turnos de hoy, próximos, historial
+• Vista calendario: mensual con turnos coloreados por estado
+• Crear turno: fecha, hora, motivo, cliente
+• Validación de duplicados (no permite 2 turnos misma hora)
+• Crear turno clickeando un día vacío en el calendario
+• Editar/eliminar turnos desde el calendario
+• Confirmar, cancelar o marcar como completado
+• Los clientes pueden solicitar turnos desde:
+  - La landing (card del abogado)
+  - El chat de IA pública
+  - El portal de clientes
+• Recordatorio automático por email 24hs antes`,
+  },
+  {
+    id: "calendario",
+    titulo: "Calendario Unificado",
+    icon: CalendarDays,
+    contenido: `Vista única de todos los eventos del estudio:
 
-La disponibilidad se configura en bloques horarios. Los turnos ocupados se bloquean automáticamente.`,
+• Turnos (dorado)
+• Audiencias (púrpura)
+• Tareas con vencimiento (rojo)
+• Vista mensual con navegación
+• Click en un día muestra detalle de todos los eventos
+• Leyenda de colores para identificar tipos
+• Útil para ver la carga de trabajo general`,
   },
   {
     id: "tareas",
@@ -83,32 +118,31 @@ La disponibilidad se configura en bloques horarios. Los turnos ocupados se bloqu
     icon: CheckSquare,
     contenido: `Gestión de trabajo con tablero kanban:
 
-• Crear tareas con título, descripción, prioridad y fecha límite
-• Tablero kanban con columnas: Pendiente, En progreso, Completada
-• Asignar tareas a miembros del equipo
-• Crear subtareas dentro de cada tarea
-• Arrastrar y soltar para cambiar estado
-• Filtrar por asignado, prioridad o fecha
-• Vincular tareas a expedientes específicos
-• Colaboración: comentarios y menciones
-
-Las tareas vencidas se resaltan en rojo. El dashboard muestra un contador de tareas pendientes.`,
-  },
-  {
+• Tres columnas: Pendientes, En curso, Completadas
+• Crear tarea con: título, descripción, prioridad, fecha límite
+• Asignar a cualquier miembro del equipo
+• Vincular a un expediente específico
+• Subtareas con barra de progreso visual
+• Etiquetas/tags personalizables
+• Adjuntar archivos (PDF, Word, imágenes)
+• Comentarios por tarea (hilos de discusión)
+• Indicadores: clip (adjunto), link (expediente vinculado), chat (comentarios)
+• Filtros: todas, pendientes, en curso, completadas
+• Alertas de vencimiento (tareas vencidas en rojo)`,
+  },  {
     id: "audiencias",
     titulo: "Audiencias",
     icon: Gavel,
-    contenido: `Calendario judicial y sistema de alertas:
+    contenido: `Calendario judicial y alertas:
 
-• Registrar audiencias con fecha, hora, juzgado y expediente
-• Alertas automáticas días antes de cada audiencia
-• Vista de calendario dedicada a audiencias
-• Vincular audiencia al expediente correspondiente
-• Marcar resultado: realizada, suspendida, reprogramada
-• Notas post-audiencia para registrar lo ocurrido
-• Filtrar por juzgado, fuero o abogado
-
-Las audiencias próximas aparecen como alertas en el Dashboard.`,
+• Vista lista: próximas y historial
+• Vista calendario: mensual con tipos coloreados
+• Tipos: Preliminar, De vista, Oral, Pericial, Conciliación, Sentencia
+• Crear audiencia: tipo, fecha, hora, juzgado, notas
+• Indicador "En X días" para cada audiencia
+• Marcar como: realizada, suspendida, reprogramada
+• Alertas automáticas por email 72hs antes
+• Click en calendario muestra detalle del día`,
   },
   {
     id: "honorarios",
@@ -116,15 +150,14 @@ Las audiencias próximas aparecen como alertas en el Dashboard.`,
     icon: DollarSign,
     contenido: `Control de cobros y facturación:
 
-• Registrar honorarios por expediente o servicio
-• Estados: pendiente, cobrado parcial, cobrado total
-• Generar recibos y comprobantes
-• Historial de pagos por cliente
-• Métricas: total facturado, cobrado, pendiente
-• Filtrar por período, cliente o estado
-• Alertas de honorarios vencidos
-
-El Dashboard Director muestra gráficos de facturación mensual y comparativas.`,
+• Registrar honorarios por expediente
+• Tipos: pactado, regulación, cuota litis, otro
+• Estados: pendiente, facturado, cobrado, en mora
+• Stats en tiempo real: total cobrado, facturado, pendiente
+• Facturación por horas: timer × tarifa = honorario automático
+• Cambiar estado directamente desde la tabla
+• Valores de JUS (verbal/escrito) configurables desde Configuración
+• Los valores de JUS se muestran en la landing automáticamente`,
   },
   {
     id: "mensajes",
@@ -132,78 +165,78 @@ El Dashboard Director muestra gráficos de facturación mensual y comparativas.`
     icon: MessageSquare,
     contenido: `Comunicación directa con clientes:
 
-• Chat interno entre el estudio y cada cliente
-• Los clientes acceden desde su portal
+• Lista de clientes a la izquierda, chat a la derecha
+• Mensajes en tiempo real (polling cada 5 segundos)
 • Historial completo de conversaciones
-• Notificaciones de mensajes nuevos
-• Adjuntar archivos en los mensajes
-• Organizado por cliente/expediente
-
-Los mensajes no leídos se muestran como badge en el sidebar.`,
-  },
-  {
+• En mobile: vista adaptada (lista o chat, no ambos)
+• Los clientes acceden desde su portal
+• Botón "Volver" en mobile para cambiar de cliente`,
+  },  {
     id: "ia",
     titulo: "Asistente IA",
     icon: Sparkles,
-    contenido: `Asistente jurídico personalizado con inteligencia artificial:
+    contenido: `Asistente jurídico personalizado con IA (Groq Llama 3.3 70B):
 
-• Chat conversacional especializado en derecho argentino
-• Consultas sobre legislación, doctrina y procedimientos
-• Generación de borradores de documentos
-• Análisis de situaciones jurídicas
-• Subida de documentos para análisis (PDFs, escritos)
-• Historial de conversaciones guardado
-• Respuestas contextualizadas al derecho argentino
-
-El asistente usa modelos de IA avanzados y está entrenado con terminología jurídica argentina.`,
+• Múltiples sesiones de chat guardadas
+• Panel lateral con conversaciones anteriores
+• "Nueva conversación" para empezar de cero
+• Auto-título basado en el primer mensaje
+• Eliminar sesiones
+• Pestaña "Mis Documentos":
+  - Subir PDFs, Word o textos
+  - Se procesan automáticamente (chunking)
+  - La IA usa tus documentos como contexto (RAG)
+  - Estado: subido → procesando → listo
+• Si la IA falla: mensaje amigable + botón "Reintentar"
+• Cada abogado tiene su propia IA aislada`,
   },
   {
     id: "escritos",
     titulo: "Escritos",
     icon: FilePen,
-    contenido: `Generador de escritos judiciales con IA:
+    contenido: `Generador de escritos judiciales con IA + plantillas:
 
-• Seleccionar tipo de escrito (demanda, contestación, recurso, etc.)
-• Completar datos del caso y partes
-• La IA genera un borrador completo del escrito
-• Editar y personalizar el resultado
-• Descargar en formato listo para presentar
-• Historial de escritos generados
-• Plantillas personalizables
+Pestaña "Generar":
+• 8 tipos: demanda, contestación, apelación, alegato, cédula, oficio, contrato, poder
+• Seleccionar expediente (opcional) para contexto
+• Agregar contexto adicional (hechos, petitorio)
+• La IA genera el escrito en formato judicial argentino
+• Copiar resultado al portapapeles
 
-Los escritos se generan siguiendo las formalidades procesales argentinas.`,
+Pestaña "Mis Plantillas":
+• Guardar modelos propios de escritos
+• Crear, editar, eliminar plantillas
+• Categorizar por tipo
+• "Usar" copia el contenido al portapapeles
+• Plantillas privadas por abogado`,
   },
   {
     id: "jurisprudencia",
     titulo: "Jurisprudencia",
     icon: BookOpen,
-    contenido: `Búsqueda en fuentes oficiales de jurisprudencia:
+    contenido: `Búsqueda en fuentes oficiales con orientación de IA:
 
 • Buscar por tema, artículo, carátula o palabras clave
-• Fuentes disponibles:
-  - CSJN (Corte Suprema de Justicia de la Nación)
-  - CIJ (Centro de Información Judicial)
-  - SAIJ (Sistema Argentino de Información Jurídica)
-• Orientación por IA: resumen de qué esperar en los resultados
-• Links directos a cada fuente con la búsqueda precargada
-• Consejos para refinar búsquedas
-
-La IA proporciona contexto sobre leyes y artículos relevantes antes de buscar.`,
-  },
-  {
+• La IA genera orientación: qué esperar, leyes relevantes, consejos de búsqueda
+• Links directos a 3 fuentes:
+  - CSJN (Corte Suprema) — funciona
+  - CIJ (Centro de Información Judicial) — funciona
+  - SAIJ (Sistema Argentino de Información Jurídica) — puede estar inestable
+• Indicador de estado por fuente
+• No reemplaza la búsqueda manual, la complementa con orientación`,
+  },  {
     id: "newsletter",
     titulo: "Newsletter",
     icon: Newspaper,
-    contenido: `Publicaciones y novedades del estudio:
+    contenido: `Publicaciones del estudio para la landing:
 
-• Crear artículos y novedades jurídicas
-• Publicar en la landing page del estudio
-• Editor de contenido con formato
-• Categorizar por área del derecho
-• Programar publicaciones
-• Visible para visitantes de la web del estudio
-
-Las publicaciones ayudan al posicionamiento del estudio y mantienen informados a los clientes.`,
+• Crear publicaciones: título, resumen, contenido, categoría, imagen
+• Upload de imagen directo (no URLs)
+• Estados: borrador → publicado → archivado
+• Editar y eliminar publicaciones
+• Las publicaciones con estado "publicado" aparecen automáticamente en la landing
+• Categorías: Novedades Normativas, Casos de Éxito, Jurisprudencia, Eventos, Guías
+• Suscripción por email para visitantes de la landing`,
   },
   {
     id: "clientes",
@@ -211,31 +244,30 @@ Las publicaciones ayudan al posicionamiento del estudio y mantienen informados a
     icon: Users,
     contenido: `Alta y gestión de clientes del portal:
 
-• Registrar nuevos clientes con datos completos
-• Datos: nombre, DNI/CUIT, email, teléfono, dirección
-• Vincular clientes a expedientes
-• Ver historial de expedientes por cliente
-• Acceso al portal de clientes (consulta de expedientes, turnos, mensajes)
-• Filtrar y buscar clientes
-• Estado: activo, inactivo
-
-Los clientes con acceso al portal pueden ver sus expedientes, sacar turnos y enviar mensajes.`,
+• Crear cliente: nombre, DNI, email, teléfono
+• Clave de acceso: auto-generada o personalizada
+• Copiar clave al portapapeles para compartir
+• Editar datos del cliente
+• Eliminar cliente (con confirmación)
+• "Claves masivas": pegar lista de DNIs → genera claves para todos
+• Los clientes usan DNI + clave para acceder al portal
+• Cambio de clave obligatorio en primer ingreso`,
   },
   {
     id: "equipo",
     titulo: "Equipo",
     icon: UserPlus,
-    contenido: `Gestión de abogados y personal del estudio:
+    contenido: `Gestión de abogados y personal:
 
-• Alta de nuevos miembros del equipo
-• Roles: Director, Asociado, Administrativo
-• Asignar matrícula y especialidad
-• Cada rol tiene permisos diferentes en el sistema
-• Director: acceso total + métricas + configuración
-• Asociado: expedientes, tareas, audiencias, IA
-• Administrativo: turnos, clientes, honorarios, mensajes
-
-El director puede invitar nuevos miembros y gestionar roles.`,
+• Alta de nuevos miembros: nombre, email, contraseña, rol
+• Roles: Asociado (abogado), Administrativo (sin expedientes/IA)
+• Editar datos de miembros (nombre, especialidad, matrícula)
+• Resetear contraseña de cualquier miembro
+• Desactivar/reactivar miembros
+• Reasignación de expedientes al desactivar (si tiene casos activos)
+• El director no es visible ni editable por asociados
+• Administrativos no requieren especialidad ni matrícula
+• Los asociados aparecen automáticamente en la landing`,
   },
   {
     id: "perfil",
@@ -243,32 +275,76 @@ El director puede invitar nuevos miembros y gestionar roles.`,
     icon: UserCog,
     contenido: `Datos personales y configuración de cuenta:
 
-• Nombre y apellido
-• Foto de perfil (se muestra en el sistema)
-• Número de WhatsApp (para contacto rápido)
-• Email asociado a la cuenta
-• Matrícula profesional
-• Especialidad jurídica
-
-Los datos del perfil se usan en escritos generados y en la información visible para clientes.`,
-  },
-  {
+• Foto de perfil (upload directo, aparece en la landing)
+• Foto de fondo (para la card en la landing)
+• Nombre, especialidad, matrícula
+• Número de WhatsApp (aparece como botón en la landing)
+• Biografía profesional
+• Áreas de práctica (separadas por coma)
+• Experiencia
+• Email y rol (no editables)`,
+  },  {
     id: "configuracion",
     titulo: "Configuración",
     icon: Settings,
-    contenido: `Ajustes generales del sistema (solo Director):
+    contenido: `Ajustes del sistema:
 
-• Número de JUS (para cálculo de honorarios)
-• Datos de contacto del estudio
-• Configuración de la landing page
-• Horarios de atención
-• Datos fiscales
-• Personalización del portal de clientes
+General (todos):
+• Valor del JUS verbal y escrito (se muestra en la landing)
+• Dirección del estudio (se muestra en landing + mapa)
+• Teléfono, email de contacto, horario
+• Todos los cambios se reflejan automáticamente en la landing
 
-Los cambios en configuración afectan a todo el estudio.`,
+Landing (todos):
+• Tagline del hero
+• Subir video/imagen de fondo (upload directo)
+• Restaurar fondo original
+• Descripción SEO
+• Ubicación para el mapa
+
+Notificaciones (todos):
+• Activar/desactivar alertas por tipo
+• Audiencias, tareas, turnos, mensajes, contacto
+
+Seguridad, Integraciones, API Keys (solo director):
+• Configuración avanzada del sistema`,
+  },
+  {
+    id: "portal",
+    titulo: "Portal de Clientes",
+    icon: Users,
+    contenido: `Acceso para clientes del estudio:
+
+• Login con DNI + clave (generada por el abogado)
+• Cambio de clave obligatorio en primer ingreso
+• Tres secciones:
+  - Mis Expedientes: ver estado, carátula, fuero
+  - Turnos: solicitar turno con fecha/hora
+  - Mensajes: chat directo con el abogado
+• Firma electrónica: canvas para firmar documentos
+• Accesible desde cualquier dispositivo (responsive)
+• QR en el footer de la landing para acceso rápido`,
+  },
+  {
+    id: "landing",
+    titulo: "Landing Pública",
+    icon: Globe,
+    contenido: `Sitio web público del estudio (sin login):
+
+• Hero animado con logo, partículas y CTAs
+• Newsletter: últimas publicaciones del estudio
+• Equipo: carousel con abogados activos (dinámico desde DB)
+• Áreas de práctica (configurables)
+• Servicios/JUS: costos de consulta (editables desde config)
+• Contacto: formulario + Google Maps dinámico
+• Chat IA: asistente que gestiona turnos y da info del estudio
+• WhatsApp administración: botón flotante
+• QR al portal en el footer
+• SEO: JSON-LD, sitemap, robots, meta tags
+• PWA: instalable como app desde el navegador
+• Reservar turno directo desde la card del abogado`,
   },
 ];
-
 export default function ManualPage() {
   const [openSection, setOpenSection] = useState<string | null>(null);
 
