@@ -20,11 +20,13 @@ import {
   X,
   Sparkles,
   DollarSign,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/erp", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/erp/dashboard-director", label: "Dirección", icon: BarChart3 },
   { href: "/erp/expedientes", label: "Expedientes", icon: FolderOpen },
   { href: "/erp/turnos", label: "Turnos", icon: Calendar },
   { href: "/erp/tareas", label: "Tareas", icon: CheckSquare },
