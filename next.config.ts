@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "chart.googleapis.com",
       },
+      {
+        protocol: "https",
+        hostname: "api.qrserver.com",
+      },
     ],
   },
   // Headers de seguridad

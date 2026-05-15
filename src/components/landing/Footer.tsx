@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export function Footer() {
   const portalUrl = "https://erplandingburgos.vercel.app/portal";
-  const qrUrl = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(portalUrl)}&chco=C9A84C`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(portalUrl)}&color=C9A84C&bgcolor=0a0a0f`;
 
   return (
     <footer className="bg-burgos-black border-t border-burgos-gray-800 py-12">

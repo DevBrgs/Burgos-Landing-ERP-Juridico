@@ -73,13 +73,18 @@ Los gráficos se generan con datos reales de la base de datos usando Recharts. V
 
 • Dos secciones: "Mis Expedientes" (personales) y "Generales" (compartidos)
 • Crear expediente: carátula, número, fuero, juzgado, estado, partes
+• Vincular un cliente al expediente (selector de clientes registrados)
 • Detección automática de conflicto de intereses al crear (busca partes repetidas en lados opuestos)
 • Filtros por estado, búsqueda por carátula o número
 • Cambiar estado: activo, en espera, cerrado, archivado
 
 Vista de detalle del expediente:
+• Cliente vinculado: badge con nombre y DNI (click lleva a su ficha)
 • Actuaciones: historial cronológico de movimientos del caso
 • Documentos: upload drag & drop de archivos adjuntos
+  - Ícono de ojo por documento: controla visibilidad para el cliente
+  - Verde = visible en el portal del cliente
+  - Gris = solo visible internamente (por defecto)
 • Timer de horas trabajadas: Play/Stop para registrar tiempo dedicado
 • Resumen automático con IA: botón "Resumir caso" genera resumen ejecutivo
 • Análisis de plazos con IA: detecta vencimientos próximos
@@ -98,7 +103,9 @@ El director ve todos los expedientes del estudio.`,
 
 • Vista lista: turnos de hoy, próximos, historial completo
 • Vista calendario: mensual con turnos coloreados por estado
-• Crear turno: fecha, hora, motivo, cliente (manual o desde calendario)
+• Crear turno: fecha, hora, motivo, cliente registrado o nombre externo
+• Selector de cliente: elegir de la lista de clientes registrados
+• Si el cliente no está registrado, se puede escribir nombre libre
 • Validación de duplicados (no permite 2 turnos en la misma hora)
 • Crear turno clickeando un día vacío en el calendario
 • Editar turnos: cambiar fecha, hora, motivo
@@ -306,15 +313,24 @@ Gestión:
 • Editar datos del cliente (nombre, email, teléfono)
 • Eliminar cliente (con confirmación)
 • Resetear clave de acceso
-• Ver estado de primer ingreso
+• Ver ficha completa del cliente (botón ojo)
+
+Ficha del cliente (/erp/clientes/[id]):
+• KPIs: expedientes, turnos, cobrado, pendiente
+• Historial/timeline: línea de tiempo con toda la actividad del cliente
+• Pestaña Expedientes: todos los casos vinculados
+• Pestaña Turnos: historial de citas
+• Pestaña Honorarios: montos cobrados y pendientes
+• Fecha de alta y mensajes intercambiados
 
 Acceso masivo:
-• "Claves masivas": pegar lista de DNIs → genera claves para todos de una vez
+• "Claves masivas": pegar lista de DNIs → genera claves para todos
 
-Portal del cliente:
-• Los clientes usan DNI + clave para acceder
-• Cambio de clave obligatorio en primer ingreso
-• Acceden a: expedientes, turnos, mensajes, firma electrónica`,
+Vinculación con el sistema:
+• Al crear un expediente se puede vincular un cliente
+• Al crear un turno se puede seleccionar un cliente registrado
+• El cliente vinculado ve sus expedientes desde el portal
+• El abogado controla qué documentos son visibles para el cliente`,
   },
   {
     id: "equipo",
@@ -446,9 +462,18 @@ Login:
 
 Secciones del portal:
 • Mis Expedientes: ver estado, carátula, fuero de sus casos
+  - Documentos compartidos: solo los que el abogado habilitó
+  - Cada documento tiene botón de descarga
 • Turnos: solicitar turno eligiendo fecha y hora disponible
 • Mensajes: chat directo con su abogado asignado
 • Firma electrónica: canvas para firmar documentos digitalmente
+
+Control de documentos (desde el ERP):
+• El abogado sube documentos al expediente normalmente
+• Cada documento tiene un ícono de visibilidad (ojo)
+• Click para alternar: visible/oculto para el cliente
+• Por defecto ningún documento es visible
+• Solo los marcados como visibles aparecen en el portal
 
 Firma electrónica:
 • El cliente firma con el dedo o mouse sobre un canvas
