@@ -10,6 +10,8 @@ import {
   Check,
   X,
   RefreshCw,
+  List,
+  CalendarDays,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -43,6 +45,7 @@ export default function TurnosPage() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [vista, setVista] = useState<"lista" | "calendario">("lista");
   const supabase = createClient();
 
   const fetchTurnos = async () => {
@@ -122,6 +125,20 @@ export default function TurnosPage() {
         ))}
       </div>
 
+      {/* Vista toggle */}
+      <div className="flex gap-2">
+        <button onClick={() => setVista("lista")} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all border ${vista === "lista" ? "bg-burgos-gold/10 text-burgos-gold border-burgos-gold/30" : "text-burgos-gray-400 border-burgos-gray-800"}`}>
+          <List size={14} /> Lista
+        </button>
+        <button onClick={() => setVista("calendario")} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all border ${vista === "calendario" ? "bg-burgos-gold/10 text-burgos-gold border-burgos-gold/30" : "text-burgos-gray-400 border-burgos-gray-800"}`}>
+          <CalendarDays size={14} /> Calendario
+        </button>
+      </div>
+
+      {vista === "calendario" ? (
+        <CalendarioView turnos={turnos} onUpdate={updateEstado} />
+      ) : (
+      <>
       {/* Turnos de hoy */}
       {turnosHoy.length > 0 && (
         <motion.div
@@ -181,6 +198,8 @@ export default function TurnosPage() {
         <div className="text-center py-12">
           <div className="w-8 h-8 border-2 border-burgos-gold/30 border-t-burgos-gold rounded-full animate-spin mx-auto" />
         </div>
+      )}
+      </>
       )}
 
       {/* Modal */}
@@ -262,6 +281,69 @@ function TurnoCard({
             <Check size={12} />
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+function CalendarioView({ turnos, onUpdate }: { turnos: Turno[]; onUpdate: (id: string, estado: string) => void }) {
+  const [mesActual, setMesActual] = useState(new Date());
+
+  const primerDia = new Date(mesActual.getFullYear(), mesActual.getMonth(), 1);
+  const ultimoDia = new Date(mesActual.getFullYear(), mesActual.getMonth() + 1, 0);
+  const diasEnMes = ultimoDia.getDate();
+  const primerDiaSemana = primerDia.getDay();
+
+  const dias = [];
+  for (let i = 0; i < primerDiaSemana; i++) dias.push(null);
+  for (let i = 1; i <= diasEnMes; i++) dias.push(i);
+
+  const getTurnosDia = (dia: number) => {
+    const fecha = `${mesActual.getFullYear()}-${String(mesActual.getMonth() + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+    return turnos.filter(t => t.fecha === fecha);
+  };
+
+  const mesAnterior = () => setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() - 1, 1));
+  const mesSiguiente = () => setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() + 1, 1));
+
+  const nombreMes = mesActual.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+
+  return (
+    <div className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-4 sm:p-6">
+      {/* Header del calendario */}
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={mesAnterior} className="text-burgos-gray-400 hover:text-burgos-gold transition-colors text-sm">← Anterior</button>
+        <h3 className="text-sm font-semibold text-burgos-white capitalize">{nombreMes}</h3>
+        <button onClick={mesSiguiente} className="text-burgos-gray-400 hover:text-burgos-gold transition-colors text-sm">Siguiente →</button>
+      </div>
+
+      {/* Días de la semana */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map(d => (
+          <div key={d} className="text-center text-[9px] text-burgos-gray-600 uppercase tracking-wider font-medium py-1">{d}</div>
+        ))}
+      </div>
+
+      {/* Días */}
+      <div className="grid grid-cols-7 gap-1">
+        {dias.map((dia, i) => {
+          if (!dia) return <div key={`empty-${i}`} />;
+          const turnosDia = getTurnosDia(dia);
+          const hoy = new Date();
+          const esHoy = dia === hoy.getDate() && mesActual.getMonth() === hoy.getMonth() && mesActual.getFullYear() === hoy.getFullYear();
+
+          return (
+            <div key={dia} className={`min-h-[60px] sm:min-h-[80px] p-1 rounded-lg border transition-colors ${esHoy ? "border-burgos-gold/30 bg-burgos-gold/5" : "border-burgos-gray-800/50 hover:border-burgos-gray-600"}`}>
+              <p className={`text-[10px] font-medium mb-0.5 ${esHoy ? "text-burgos-gold" : "text-burgos-gray-400"}`}>{dia}</p>
+              {turnosDia.slice(0, 2).map(t => (
+                <div key={t.id} className={`text-[8px] px-1 py-0.5 rounded mb-0.5 truncate ${t.estado === "confirmado" ? "bg-green-500/10 text-green-400" : t.estado === "pendiente" ? "bg-amber-500/10 text-amber-400" : "bg-burgos-gray-800 text-burgos-gray-400"}`}>
+                  {t.hora.slice(0, 5)} {t.nombre_externo || t.motivo?.slice(0, 10) || ""}
+                </div>
+              ))}
+              {turnosDia.length > 2 && <p className="text-[8px] text-burgos-gray-600">+{turnosDia.length - 2} más</p>}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

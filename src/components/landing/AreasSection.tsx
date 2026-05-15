@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import {
   Briefcase,
   Users,
@@ -12,50 +13,37 @@ import {
   Scale,
 } from "lucide-react";
 
-const areas = [
-  {
-    nombre: "Derecho Civil",
-    descripcion: "Contratos, responsabilidad civil, sucesiones y derechos reales.",
-    icono: FileText,
-  },
-  {
-    nombre: "Derecho Comercial",
-    descripcion: "Sociedades, concursos, quiebras y contratos comerciales.",
-    icono: Building2,
-  },
-  {
-    nombre: "Derecho Laboral",
-    descripcion: "Despidos, accidentes laborales, negociación colectiva.",
-    icono: Briefcase,
-  },
-  {
-    nombre: "Derecho Penal",
-    descripcion: "Defensa penal, querellas y delitos económicos.",
-    icono: Gavel,
-  },
-  {
-    nombre: "Derecho de Familia",
-    descripcion: "Divorcios, alimentos, régimen de visitas y adopción.",
-    icono: Heart,
-  },
-  {
-    nombre: "Derecho Administrativo",
-    descripcion: "Licitaciones, contratos públicos y recursos administrativos.",
-    icono: Shield,
-  },
-  {
-    nombre: "Derecho Societario",
-    descripcion: "Constitución de sociedades, fusiones y adquisiciones.",
-    icono: Users,
-  },
-  {
-    nombre: "Litigios Complejos",
-    descripcion: "Casos de alta complejidad con estrategia integral.",
-    icono: Scale,
-  },
+const iconMap: Record<string, any> = {
+  FileText, Building2, Briefcase, Gavel, Heart, Shield, Users, Scale,
+};
+
+const areasDefault = [
+  { nombre: "Derecho Civil", descripcion: "Contratos, responsabilidad civil, sucesiones y derechos reales.", icono: "FileText" },
+  { nombre: "Derecho Comercial", descripcion: "Sociedades, concursos, quiebras y contratos comerciales.", icono: "Building2" },
+  { nombre: "Derecho Laboral", descripcion: "Despidos, accidentes laborales, negociación colectiva.", icono: "Briefcase" },
+  { nombre: "Derecho Penal", descripcion: "Defensa penal, querellas y delitos económicos.", icono: "Gavel" },
+  { nombre: "Derecho de Familia", descripcion: "Divorcios, alimentos, régimen de visitas y adopción.", icono: "Heart" },
+  { nombre: "Derecho Administrativo", descripcion: "Licitaciones, contratos públicos y recursos administrativos.", icono: "Shield" },
+  { nombre: "Derecho Societario", descripcion: "Constitución de sociedades, fusiones y adquisiciones.", icono: "Users" },
+  { nombre: "Litigios Complejos", descripcion: "Casos de alta complejidad con estrategia integral.", icono: "Scale" },
 ];
 
 export function AreasSection() {
+  const [areas, setAreas] = useState(areasDefault);
+
+  useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const res = await fetch("/api/configuracion");
+        const config = await res.json();
+        if (config.areas_practica) {
+          const parsed = JSON.parse(config.areas_practica);
+          if (Array.isArray(parsed) && parsed.length > 0) setAreas(parsed);
+        }
+      } catch {}
+    };
+    fetchAreas();
+  }, []);
   return (
     <section id="areas" className="py-28 bg-burgos-black relative overflow-hidden">
       {/* Background */}
@@ -88,7 +76,7 @@ export function AreasSection() {
         {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {areas.map((area, index) => {
-            const Icon = area.icono;
+            const Icon = iconMap[area.icono] || Scale;
             return (
               <motion.div
                 key={area.nombre}

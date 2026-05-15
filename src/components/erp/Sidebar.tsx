@@ -24,6 +24,7 @@ import {
   MessageSquare,
   FilePen,
   Building2,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +39,7 @@ const navItems = [
   { href: "/erp/mensajes", label: "Mensajes", icon: MessageSquare },
   { href: "/erp/ia", label: "Asistente IA", icon: Sparkles },
   { href: "/erp/escritos", label: "Escritos", icon: FilePen },
+  { href: "/erp/jurisprudencia", label: "Jurisprudencia", icon: BookOpen },
   { href: "/erp/newsletter", label: "Newsletter", icon: Newspaper },
   { href: "/erp/clientes", label: "Clientes", icon: Users },
   { href: "/erp/abogados", label: "Equipo", icon: UserPlus },
