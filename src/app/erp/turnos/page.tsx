@@ -12,6 +12,8 @@ import {
   RefreshCw,
   List,
   CalendarDays,
+  Trash2,
+  Pencil,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -46,6 +48,7 @@ export default function TurnosPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [vista, setVista] = useState<"lista" | "calendario">("lista");
+  const [fechaPrefill, setFechaPrefill] = useState("");
   const supabase = createClient();
 
   const fetchTurnos = async () => {
@@ -136,7 +139,7 @@ export default function TurnosPage() {
       </div>
 
       {vista === "calendario" ? (
-        <CalendarioView turnos={turnos} onUpdate={updateEstado} />
+        <CalendarioView turnos={turnos} onUpdate={updateEstado} onRefresh={fetchTurnos} onNewTurno={(fecha) => { setFechaPrefill(fecha); setShowModal(true); }} />
       ) : (
       <>
       {/* Turnos de hoy */}
@@ -205,9 +208,11 @@ export default function TurnosPage() {
       {/* Modal */}
       {showModal && (
         <NuevoTurnoModal
-          onClose={() => setShowModal(false)}
+          fechaInicial={fechaPrefill}
+          onClose={() => { setShowModal(false); setFechaPrefill(""); }}
           onSuccess={() => {
             setShowModal(false);
+            setFechaPrefill("");
             fetchTurnos();
           }}
         />
@@ -286,7 +291,7 @@ function TurnoCard({
   );
 }
 
-function CalendarioView({ turnos, onUpdate }: { turnos: Turno[]; onUpdate: (id: string, estado: string) => void }) {
+function CalendarioView({ turnos, onUpdate, onRefresh, onNewTurno }: { turnos: Turno[]; onUpdate: (id: string, estado: string) => void; onRefresh: () => void; onNewTurno: (fecha: string) => void }) {
   const [mesActual, setMesActual] = useState(new Date());
   const [diaSeleccionado, setDiaSeleccionado] = useState<number | null>(null);
 
@@ -340,12 +345,19 @@ function CalendarioView({ turnos, onUpdate }: { turnos: Turno[]; onUpdate: (id: 
             <button
               type="button"
               key={dia}
-              onClick={() => tieneTurnos ? setDiaSeleccionado(dia) : undefined}
+              onClick={() => {
+                if (tieneTurnos) {
+                  setDiaSeleccionado(dia);
+                } else {
+                  const fecha = `${mesActual.getFullYear()}-${String(mesActual.getMonth() + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+                  onNewTurno(fecha);
+                }
+              }}
               className={`min-h-[60px] sm:min-h-[80px] p-1 rounded-lg border transition-colors text-left ${
                 esHoy
                   ? "border-burgos-gold/40 bg-burgos-gold/5"
                   : "border-burgos-gray-800/50 hover:border-burgos-gray-600"
-              } ${tieneTurnos ? "cursor-pointer hover:bg-burgos-gold/5" : "cursor-default"}`}
+              } ${tieneTurnos ? "cursor-pointer hover:bg-burgos-gold/5" : "cursor-pointer hover:bg-burgos-gold/5"}`}
             >
               <p className={`text-xs font-semibold mb-0.5 ${esHoy ? "text-burgos-gold" : "text-burgos-white"}`}>{dia}</p>
               {turnosDia.slice(0, 2).map(t => (
@@ -374,6 +386,7 @@ function CalendarioView({ turnos, onUpdate }: { turnos: Turno[]; onUpdate: (id: 
           mes={mesActual}
           turnos={turnosDelDiaSeleccionado}
           onUpdate={onUpdate}
+          onRefresh={onRefresh}
           onClose={() => setDiaSeleccionado(null)}
         />
       )}
@@ -386,19 +399,52 @@ function TurnosDiaModal({
   mes,
   turnos,
   onUpdate,
+  onRefresh,
   onClose,
 }: {
   dia: number;
   mes: Date;
   turnos: Turno[];
   onUpdate: (id: string, estado: string) => void;
+  onRefresh: () => void;
   onClose: () => void;
 }) {
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ fecha: "", hora: "", motivo: "" });
+  const [deleting, setDeleting] = useState(false);
+  const supabase = createClient();
+
   const fechaStr = new Date(mes.getFullYear(), mes.getMonth(), dia).toLocaleDateString("es-AR", {
     weekday: "long",
     day: "numeric",
     month: "long",
   });
+
+  const iniciarEdicion = (turno: Turno) => {
+    setEditandoId(turno.id);
+    setEditForm({ fecha: turno.fecha, hora: turno.hora, motivo: turno.motivo });
+  };
+
+  const guardarEdicion = async () => {
+    if (!editandoId) return;
+    await supabase.from("turnos").update({
+      fecha: editForm.fecha,
+      hora: editForm.hora,
+      motivo: editForm.motivo,
+    }).eq("id", editandoId);
+    setEditandoId(null);
+    onRefresh();
+    onClose();
+  };
+
+  const eliminarTurno = async (id: string) => {
+    if (!confirm("¿Estás seguro de eliminar este turno?")) return;
+    setDeleting(true);
+    await supabase.from("turnos").delete().eq("id", id);
+    setDeleting(false);
+    onRefresh();
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -421,66 +467,110 @@ function TurnosDiaModal({
         <div className="space-y-3">
           {turnos.map((turno) => (
             <div key={turno.id} className="bg-burgos-black/50 rounded-xl border border-burgos-gray-800 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Clock size={12} className="text-burgos-gold" />
-                    <span className="text-sm font-semibold text-burgos-white">{turno.hora.slice(0, 5)}</span>
-                    <span className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full border ${estadoStyles[turno.estado]}`}>
-                      {turno.estado}
-                    </span>
+              {editandoId === turno.id ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1 block">Fecha</label>
+                      <input type="date" value={editForm.fecha} onChange={(e) => setEditForm({ ...editForm, fecha: e.target.value })} className="w-full px-3 py-2 bg-burgos-black/50 border border-burgos-gray-800 rounded-lg text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1 block">Hora</label>
+                      <input type="time" value={editForm.hora} onChange={(e) => setEditForm({ ...editForm, hora: e.target.value })} className="w-full px-3 py-2 bg-burgos-black/50 border border-burgos-gray-800 rounded-lg text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
+                    </div>
                   </div>
-                  <p className="text-sm text-burgos-white font-medium">{turno.motivo || "Sin motivo"}</p>
-                  {turno.nombre_externo && (
-                    <p className="text-xs text-burgos-gray-400 flex items-center gap-1 mt-1">
-                      <User size={10} /> {turno.nombre_externo}
-                    </p>
-                  )}
-                  {turno.notas && (
-                    <p className="text-xs text-burgos-gray-400 mt-1 italic">{turno.notas}</p>
-                  )}
-                  <p className="text-[10px] text-burgos-gray-600 mt-1">{origenLabels[turno.origen] || turno.origen}</p>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1 block">Motivo</label>
+                    <input type="text" value={editForm.motivo} onChange={(e) => setEditForm({ ...editForm, motivo: e.target.value })} className="w-full px-3 py-2 bg-burgos-black/50 border border-burgos-gray-800 rounded-lg text-burgos-white focus:outline-none focus:border-burgos-gold/40 text-sm" />
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={guardarEdicion} className="bg-burgos-gold hover:bg-burgos-gold-light text-burgos-black px-4 py-2 rounded-lg text-xs font-semibold transition-all">
+                      Guardar
+                    </button>
+                    <button onClick={() => setEditandoId(null)} className="bg-burgos-gray-800 hover:bg-burgos-gray-700 text-burgos-white px-4 py-2 rounded-lg text-xs font-medium transition-all">
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock size={12} className="text-burgos-gold" />
+                      <span className="text-sm font-semibold text-burgos-white">{turno.hora.slice(0, 5)}</span>
+                      <span className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full border ${estadoStyles[turno.estado]}`}>
+                        {turno.estado}
+                      </span>
+                    </div>
+                    <p className="text-sm text-burgos-white font-medium">{turno.motivo || "Sin motivo"}</p>
+                    {turno.nombre_externo && (
+                      <p className="text-xs text-burgos-gray-400 flex items-center gap-1 mt-1">
+                        <User size={10} /> {turno.nombre_externo}
+                      </p>
+                    )}
+                    {turno.notas && (
+                      <p className="text-xs text-burgos-gray-400 mt-1 italic">{turno.notas}</p>
+                    )}
+                    <p className="text-[10px] text-burgos-gray-600 mt-1">{origenLabels[turno.origen] || turno.origen}</p>
+                  </div>
 
-                <div className="flex flex-col gap-1.5">
-                  {turno.estado === "pendiente" && (
-                    <>
-                      <button
-                        onClick={() => onUpdate(turno.id, "confirmado")}
-                        className="w-8 h-8 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center justify-center text-green-400 hover:bg-green-500/20 transition-colors"
-                        title="Confirmar"
-                      >
-                        <Check size={14} />
-                      </button>
-                      <button
-                        onClick={() => onUpdate(turno.id, "cancelado")}
-                        className="w-8 h-8 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-colors"
-                        title="Cancelar"
-                      >
-                        <X size={14} />
-                      </button>
-                    </>
-                  )}
-                  {turno.estado === "confirmado" && (
-                    <>
-                      <button
-                        onClick={() => onUpdate(turno.id, "completado")}
-                        className="w-8 h-8 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors"
-                        title="Marcar completado"
-                      >
-                        <Check size={14} />
-                      </button>
-                      <button
-                        onClick={() => onUpdate(turno.id, "cancelado")}
-                        className="w-8 h-8 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-colors"
-                        title="Cancelar"
-                      >
-                        <X size={14} />
-                      </button>
-                    </>
-                  )}
+                  <div className="flex flex-col gap-1.5">
+                    {turno.estado === "pendiente" && (
+                      <>
+                        <button
+                          onClick={() => onUpdate(turno.id, "confirmado")}
+                          className="w-8 h-8 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center justify-center text-green-400 hover:bg-green-500/20 transition-colors"
+                          title="Confirmar"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          onClick={() => onUpdate(turno.id, "cancelado")}
+                          className="w-8 h-8 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-colors"
+                          title="Cancelar"
+                        >
+                          <X size={14} />
+                        </button>
+                      </>
+                    )}
+                    {turno.estado === "confirmado" && (
+                      <>
+                        <button
+                          onClick={() => onUpdate(turno.id, "completado")}
+                          className="w-8 h-8 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors"
+                          title="Marcar completado"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          onClick={() => onUpdate(turno.id, "cancelado")}
+                          className="w-8 h-8 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-colors"
+                          title="Cancelar"
+                        >
+                          <X size={14} />
+                        </button>
+                      </>
+                    )}
+                    {/* Editar */}
+                    <button
+                      onClick={() => iniciarEdicion(turno)}
+                      className="w-8 h-8 bg-burgos-gold/10 border border-burgos-gold/20 rounded-lg flex items-center justify-center text-burgos-gold hover:bg-burgos-gold/20 transition-colors"
+                      title="Editar"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    {/* Eliminar */}
+                    <button
+                      onClick={() => eliminarTurno(turno.id)}
+                      disabled={deleting}
+                      className="w-8 h-8 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           ))}
         </div>
@@ -490,14 +580,16 @@ function TurnosDiaModal({
 }
 
 function NuevoTurnoModal({
+  fechaInicial,
   onClose,
   onSuccess,
 }: {
+  fechaInicial?: string;
   onClose: () => void;
   onSuccess: () => void;
 }) {
   const [form, setForm] = useState({
-    fecha: "",
+    fecha: fechaInicial || "",
     hora: "",
     motivo: "",
     nombre_externo: "",

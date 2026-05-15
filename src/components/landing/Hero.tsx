@@ -55,22 +55,22 @@ export function Hero() {
 
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(6)].map((_, i) => (
+        {[...Array(15)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-1 h-1 bg-burgos-gold/30 rounded-full"
+            className={`absolute rounded-full ${i % 3 === 0 ? "w-1.5 h-1.5 bg-burgos-gold/40" : "w-1 h-1 bg-burgos-gold/40"}`}
             style={{
-              left: `${15 + i * 15}%`,
-              top: `${20 + (i % 3) * 25}%`,
+              left: `${5 + (i * 6.5) % 90}%`,
+              top: `${10 + ((i * 17) % 75)}%`,
             }}
             animate={{
-              y: [0, -30, 0],
-              opacity: [0.2, 0.6, 0.2],
+              y: [0, -30 - (i % 4) * 10, 0],
+              opacity: [0.2, 0.7, 0.2],
             }}
             transition={{
-              duration: 4 + i,
+              duration: 3.5 + (i % 5),
               repeat: Infinity,
-              delay: i * 0.8,
+              delay: i * 0.5,
               ease: "easeInOut",
             }}
           />

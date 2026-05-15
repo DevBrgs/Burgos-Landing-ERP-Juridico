@@ -53,12 +53,43 @@ export default function JurisprudenciaPage() {
               Fuente: <span className="text-burgos-gold">{resultados.fuente}</span>
               {resultados.total && ` · ${resultados.total} resultados`}
             </p>
-            {resultados.url && (
-              <a href={resultados.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-burgos-gold hover:text-burgos-gold-light transition-colors">
-                Ver en {resultados.fuente} <ExternalLink size={12} />
-              </a>
-            )}
           </div>
+
+          {/* Resumen orientativo de IA */}
+          {resultados.resumen && (
+            <div className="bg-gradient-to-br from-burgos-gold/5 to-burgos-dark rounded-xl border border-burgos-gold/20 p-5">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-burgos-gold/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Scale size={16} className="text-burgos-gold" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-burgos-gold mb-2">Orientación jurídica (IA)</h3>
+                  <p className="text-sm text-burgos-gray-300 leading-relaxed whitespace-pre-line">{resultados.resumen}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Link a SAIJ prominente */}
+          {resultados.url && (
+            <div className="bg-burgos-dark rounded-xl border border-burgos-gray-800 p-5">
+              <a
+                href={resultados.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-burgos-gold/10 hover:bg-burgos-gold/20 border border-burgos-gold/30 text-burgos-gold px-5 py-3 rounded-xl font-semibold text-sm transition-all"
+              >
+                <ExternalLink size={16} />
+                Ver resultados en SAIJ
+              </a>
+              <p className="text-[11px] text-burgos-gray-500 mt-3">
+                ⚠️ SAIJ puede estar temporalmente no disponible. Si el enlace no funciona, buscá directamente en{" "}
+                <a href="http://www.saij.gob.ar" target="_blank" rel="noopener noreferrer" className="text-burgos-gold hover:underline">
+                  saij.gob.ar
+                </a>
+              </p>
+            </div>
+          )}
 
           {resultados.mensaje && (
             <div className="bg-burgos-dark rounded-xl border border-burgos-gray-800 p-5">

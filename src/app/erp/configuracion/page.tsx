@@ -11,6 +11,7 @@ import {
   Globe,
   Palette,
   Key,
+  RefreshCw,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { FileUpload } from "@/components/ui/FileUpload";
@@ -274,10 +275,28 @@ function ConfigNotificaciones() {
 }
 
 function ConfigLanding() {
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const restaurarFondo = async () => {
+    setSaving(true);
+    await fetch("/api/configuracion", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clave: "hero_background_url", valor: "" }),
+    });
+    setSaving(false);
+    setMsg("Fondo restaurado al original (animación por defecto).");
+    setTimeout(() => setMsg(""), 3000);
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-burgos-white">Configuración de la Landing</h2>
       <p className="text-sm text-burgos-gray-400">Personalizá el contenido de la página pública.</p>
+
+      {msg && <div className="bg-green-500/10 text-green-400 text-sm px-4 py-3 rounded-xl">{msg}</div>}
+
       <div className="space-y-4">
         <div>
           <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Tagline del Hero</label>
@@ -294,6 +313,15 @@ function ConfigLanding() {
             onUpload={(url) => { console.log("Hero media:", url); }}
           />
           <p className="text-[10px] text-burgos-gray-600 mt-1">Soporta video MP4 o imagen JPG/PNG. Máximo 50MB.</p>
+          <button
+            onClick={restaurarFondo}
+            disabled={saving}
+            className="mt-3 inline-flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 px-4 py-2 rounded-xl text-xs font-medium transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={14} />
+            Restaurar fondo original
+          </button>
+          <p className="text-[10px] text-burgos-gray-600 mt-1">Elimina la imagen/video subido y vuelve al fondo animado por defecto.</p>
         </div>
         <div>
           <label className="text-[10px] uppercase tracking-wider text-burgos-gray-600 font-medium mb-1.5 block">Ubicación del estudio</label>
