@@ -21,6 +21,7 @@ import {
   Sparkles,
   DollarSign,
   BarChart3,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ const navItems = [
   { href: "/erp/tareas", label: "Tareas", icon: CheckSquare },
   { href: "/erp/audiencias", label: "Audiencias", icon: Gavel },
   { href: "/erp/honorarios", label: "Honorarios", icon: DollarSign },
+  { href: "/erp/mensajes", label: "Mensajes", icon: MessageSquare },
   { href: "/erp/ia", label: "Asistente IA", icon: Sparkles },
   { href: "/erp/newsletter", label: "Newsletter", icon: Newspaper },
   { href: "/erp/clientes", label: "Clientes", icon: Users },

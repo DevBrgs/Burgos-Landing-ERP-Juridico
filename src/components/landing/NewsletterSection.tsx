@@ -2,16 +2,15 @@
 
 import { motion } from "framer-motion";
 import { Newspaper, ArrowRight, Clock, User, Tag, ArrowUpRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 // Datos placeholder — en producción vendrán de Supabase (dinámico, priorizando lo más reciente)
-const publicaciones = [
+const publicacionesPlaceholder = [
   {
     id: "1",
     titulo: "Nuevas modificaciones al Código Procesal Civil y Comercial",
-    resumen:
-      "Análisis de las recientes reformas que impactan en los plazos procesales y la tramitación de causas civiles en el ámbito nacional.",
+    resumen: "Análisis de las recientes reformas que impactan en los plazos procesales y la tramitación de causas civiles en el ámbito nacional.",
     categoria: "Novedades Normativas",
     autor: "Dr. Martín Burgos",
     fecha: "10 May 2025",
@@ -21,8 +20,7 @@ const publicaciones = [
   {
     id: "2",
     titulo: "Caso de éxito: Indemnización por despido discriminatorio",
-    resumen:
-      "Sentencia favorable que reconoce el despido discriminatorio con indemnización agravada para nuestro cliente.",
+    resumen: "Sentencia favorable que reconoce el despido discriminatorio con indemnización agravada para nuestro cliente.",
     categoria: "Casos de Éxito",
     autor: "Dra. Laura Méndez",
     fecha: "5 May 2025",
@@ -32,8 +30,7 @@ const publicaciones = [
   {
     id: "3",
     titulo: "Charla abierta: Derechos del consumidor en la era digital",
-    resumen:
-      "El próximo jueves realizaremos una charla gratuita sobre los derechos del consumidor en compras online y plataformas digitales.",
+    resumen: "El próximo jueves realizaremos una charla gratuita sobre los derechos del consumidor en compras online y plataformas digitales.",
     categoria: "Eventos",
     autor: "Dra. Carolina Vega",
     fecha: "1 May 2025",
@@ -43,8 +40,7 @@ const publicaciones = [
   {
     id: "4",
     titulo: "Actualización: Nuevos montos de UMA para regulación de honorarios",
-    resumen:
-      "Se actualizaron los valores de la Unidad de Medida Arancelaria. Impacto directo en las regulaciones de honorarios profesionales.",
+    resumen: "Se actualizaron los valores de la Unidad de Medida Arancelaria. Impacto directo en las regulaciones de honorarios profesionales.",
     categoria: "Novedades Normativas",
     autor: "Dr. Alejandro Torres",
     fecha: "28 Abr 2025",
@@ -54,8 +50,7 @@ const publicaciones = [
   {
     id: "5",
     titulo: "Jurisprudencia: CSJN sobre prescripción en acciones laborales",
-    resumen:
-      "Análisis del reciente fallo de la Corte Suprema que modifica el criterio de prescripción en reclamos por accidentes laborales.",
+    resumen: "Análisis del reciente fallo de la Corte Suprema que modifica el criterio de prescripción en reclamos por accidentes laborales.",
     categoria: "Jurisprudencia",
     autor: "Dra. Laura Méndez",
     fecha: "22 Abr 2025",
@@ -82,6 +77,29 @@ function categoriaStyle(cat: string) {
 export function NewsletterSection() {
   const [email, setEmail] = useState("");
   const [suscrito, setSuscrito] = useState(false);
+  const [publicaciones, setPublicaciones] = useState(publicacionesPlaceholder);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch("/api/newsletter?limit=5");
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setPublicaciones(data.map((p: any, i: number) => ({
+            id: p.id,
+            titulo: p.titulo,
+            resumen: p.resumen || "",
+            categoria: p.categoria,
+            autor: p.abogados?.nombre || "Equipo Burgos",
+            fecha: p.publicado_en ? new Date(p.publicado_en).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" }) : "",
+            destacado: i === 0,
+            imagen: p.imagen_url || publicacionesPlaceholder[i % publicacionesPlaceholder.length]?.imagen || "",
+          })));
+        }
+      } catch {}
+    };
+    fetchPosts();
+  }, []);
 
   const handleSuscripcion = async (e: React.FormEvent) => {
     e.preventDefault();
