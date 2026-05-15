@@ -288,6 +288,7 @@ function TurnoCard({
 
 function CalendarioView({ turnos, onUpdate }: { turnos: Turno[]; onUpdate: (id: string, estado: string) => void }) {
   const [mesActual, setMesActual] = useState(new Date());
+  const [diaSeleccionado, setDiaSeleccionado] = useState<number | null>(null);
 
   const primerDia = new Date(mesActual.getFullYear(), mesActual.getMonth(), 1);
   const ultimoDia = new Date(mesActual.getFullYear(), mesActual.getMonth() + 1, 0);
@@ -308,6 +309,8 @@ function CalendarioView({ turnos, onUpdate }: { turnos: Turno[]; onUpdate: (id: 
 
   const nombreMes = mesActual.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
 
+  const turnosDelDiaSeleccionado = diaSeleccionado ? getTurnosDia(diaSeleccionado) : [];
+
   return (
     <div className="bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-4 sm:p-6">
       {/* Header del calendario */}
@@ -320,7 +323,7 @@ function CalendarioView({ turnos, onUpdate }: { turnos: Turno[]; onUpdate: (id: 
       {/* Días de la semana */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map(d => (
-          <div key={d} className="text-center text-[9px] text-burgos-gray-600 uppercase tracking-wider font-medium py-1">{d}</div>
+          <div key={d} className="text-center text-[10px] text-burgos-white uppercase tracking-wider font-semibold py-1 opacity-70">{d}</div>
         ))}
       </div>
 
@@ -331,20 +334,157 @@ function CalendarioView({ turnos, onUpdate }: { turnos: Turno[]; onUpdate: (id: 
           const turnosDia = getTurnosDia(dia);
           const hoy = new Date();
           const esHoy = dia === hoy.getDate() && mesActual.getMonth() === hoy.getMonth() && mesActual.getFullYear() === hoy.getFullYear();
+          const tieneTurnos = turnosDia.length > 0;
 
           return (
-            <div key={dia} className={`min-h-[60px] sm:min-h-[80px] p-1 rounded-lg border transition-colors ${esHoy ? "border-burgos-gold/30 bg-burgos-gold/5" : "border-burgos-gray-800/50 hover:border-burgos-gray-600"}`}>
-              <p className={`text-[10px] font-medium mb-0.5 ${esHoy ? "text-burgos-gold" : "text-burgos-gray-400"}`}>{dia}</p>
+            <button
+              type="button"
+              key={dia}
+              onClick={() => tieneTurnos ? setDiaSeleccionado(dia) : undefined}
+              className={`min-h-[60px] sm:min-h-[80px] p-1 rounded-lg border transition-colors text-left ${
+                esHoy
+                  ? "border-burgos-gold/40 bg-burgos-gold/5"
+                  : "border-burgos-gray-800/50 hover:border-burgos-gray-600"
+              } ${tieneTurnos ? "cursor-pointer hover:bg-burgos-gold/5" : "cursor-default"}`}
+            >
+              <p className={`text-xs font-semibold mb-0.5 ${esHoy ? "text-burgos-gold" : "text-burgos-white"}`}>{dia}</p>
               {turnosDia.slice(0, 2).map(t => (
-                <div key={t.id} className={`text-[8px] px-1 py-0.5 rounded mb-0.5 truncate ${t.estado === "confirmado" ? "bg-green-500/10 text-green-400" : t.estado === "pendiente" ? "bg-amber-500/10 text-amber-400" : "bg-burgos-gray-800 text-burgos-gray-400"}`}>
+                <div key={t.id} className={`text-[8px] px-1 py-0.5 rounded mb-0.5 truncate font-medium ${
+                  t.estado === "confirmado"
+                    ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                    : t.estado === "pendiente"
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                    : t.estado === "cancelado"
+                    ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                    : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                }`}>
                   {t.hora.slice(0, 5)} {t.nombre_externo || t.motivo?.slice(0, 10) || ""}
                 </div>
               ))}
-              {turnosDia.length > 2 && <p className="text-[8px] text-burgos-gray-600">+{turnosDia.length - 2} más</p>}
-            </div>
+              {turnosDia.length > 2 && <p className="text-[8px] text-burgos-white opacity-60 font-medium">+{turnosDia.length - 2} más</p>}
+            </button>
           );
         })}
       </div>
+
+      {/* Modal de detalle del día */}
+      {diaSeleccionado && turnosDelDiaSeleccionado.length > 0 && (
+        <TurnosDiaModal
+          dia={diaSeleccionado}
+          mes={mesActual}
+          turnos={turnosDelDiaSeleccionado}
+          onUpdate={onUpdate}
+          onClose={() => setDiaSeleccionado(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function TurnosDiaModal({
+  dia,
+  mes,
+  turnos,
+  onUpdate,
+  onClose,
+}: {
+  dia: number;
+  mes: Date;
+  turnos: Turno[];
+  onUpdate: (id: string, estado: string) => void;
+  onClose: () => void;
+}) {
+  const fechaStr = new Date(mes.getFullYear(), mes.getMonth(), dia).toLocaleDateString("es-AR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative bg-burgos-dark rounded-2xl border border-burgos-gray-800 p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto"
+      >
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-lg font-bold text-burgos-white capitalize">{fechaStr}</h2>
+            <p className="text-xs text-burgos-gray-400 mt-0.5">{turnos.length} turno{turnos.length !== 1 ? "s" : ""}</p>
+          </div>
+          <button onClick={onClose} className="text-burgos-gray-400 hover:text-burgos-white transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {turnos.map((turno) => (
+            <div key={turno.id} className="bg-burgos-black/50 rounded-xl border border-burgos-gray-800 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock size={12} className="text-burgos-gold" />
+                    <span className="text-sm font-semibold text-burgos-white">{turno.hora.slice(0, 5)}</span>
+                    <span className={`text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full border ${estadoStyles[turno.estado]}`}>
+                      {turno.estado}
+                    </span>
+                  </div>
+                  <p className="text-sm text-burgos-white font-medium">{turno.motivo || "Sin motivo"}</p>
+                  {turno.nombre_externo && (
+                    <p className="text-xs text-burgos-gray-400 flex items-center gap-1 mt-1">
+                      <User size={10} /> {turno.nombre_externo}
+                    </p>
+                  )}
+                  {turno.notas && (
+                    <p className="text-xs text-burgos-gray-400 mt-1 italic">{turno.notas}</p>
+                  )}
+                  <p className="text-[10px] text-burgos-gray-600 mt-1">{origenLabels[turno.origen] || turno.origen}</p>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  {turno.estado === "pendiente" && (
+                    <>
+                      <button
+                        onClick={() => onUpdate(turno.id, "confirmado")}
+                        className="w-8 h-8 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center justify-center text-green-400 hover:bg-green-500/20 transition-colors"
+                        title="Confirmar"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        onClick={() => onUpdate(turno.id, "cancelado")}
+                        className="w-8 h-8 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-colors"
+                        title="Cancelar"
+                      >
+                        <X size={14} />
+                      </button>
+                    </>
+                  )}
+                  {turno.estado === "confirmado" && (
+                    <>
+                      <button
+                        onClick={() => onUpdate(turno.id, "completado")}
+                        className="w-8 h-8 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors"
+                        title="Marcar completado"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        onClick={() => onUpdate(turno.id, "cancelado")}
+                        className="w-8 h-8 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-colors"
+                        title="Cancelar"
+                      >
+                        <X size={14} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
     </div>
   );
 }
